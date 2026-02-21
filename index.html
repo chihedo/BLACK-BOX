@@ -1,0 +1,1294 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BLACK BOX</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Serif+JP:wght@300;400;700&family=IBM+Plex+Mono:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --black: #000000;
+  --white: #ffffff;
+  --red: #ff2020;
+  --dim: #111111;
+  --mid: #222222;
+  --border: #333333;
+  --muted: #555555;
+  --text-muted: #888888;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--black);
+  color: var(--white);
+  font-family: 'Noto Serif JP', serif;
+  min-height: 100vh;
+  cursor: crosshair;
+  overflow-x: hidden;
+}
+
+/* SCANLINES */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(255,255,255,0.012) 2px,
+    rgba(255,255,255,0.012) 4px
+  );
+  pointer-events: none;
+  z-index: 999;
+}
+
+/* CUSTOM CURSOR */
+* { cursor: crosshair; }
+button, a { cursor: crosshair; }
+
+/* HEADER */
+header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid var(--border);
+  background: rgba(0,0,0,0.95);
+  backdrop-filter: blur(10px);
+  height: 56px;
+}
+
+.logo-wrap {
+  display: flex;
+  align-items: center;
+  padding: 0 2rem;
+  border-right: 1px solid var(--border);
+  gap: 1rem;
+  text-decoration: none;
+}
+
+.logo-box {
+  width: 28px; height: 28px;
+  background: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-box-inner {
+  width: 10px; height: 10px;
+  background: var(--black);
+}
+
+.logo-text {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.4rem;
+  letter-spacing: 0.25em;
+  color: var(--white);
+}
+
+nav {
+  display: flex;
+  align-items: stretch;
+  margin-left: auto;
+}
+
+nav a {
+  display: flex;
+  align-items: center;
+  padding: 0 0.75rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  text-decoration: none;
+  border-left: 1px solid var(--border);
+  transition: all 0.2s;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+nav a:hover { color: var(--white); background: var(--dim); }
+
+nav a.active { color: var(--white); }
+
+.nav-post {
+  background: var(--white) !important;
+  color: var(--black) !important;
+  font-weight: 700 !important;
+  transition: all 0.2s !important;
+}
+
+.nav-post:hover { background: var(--red) !important; color: var(--white) !important; }
+
+/* HERO */
+.hero {
+  padding-top: 56px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-left: 4rem;
+  padding-right: 4rem;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #000000 0%, #0a0a0a 60%, #111111 100%);
+}
+
+.hero-bg-text {
+  position: absolute;
+  right: -2rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(12rem, 25vw, 22rem);
+  color: rgba(255,255,255,0.015);
+  letter-spacing: -0.05em;
+  line-height: 0.85;
+  pointer-events: none;
+  user-select: none;
+}
+
+.hero-eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.4em;
+  color: var(--red);
+  text-transform: uppercase;
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  animation: fade-in 0.8s ease both;
+}
+
+.hero-eyebrow::before {
+  content: '';
+  display: block;
+  width: 40px;
+  height: 1px;
+  background: var(--red);
+}
+
+.hero-h1 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(4rem, 10vw, 9rem);
+  line-height: 0.92;
+  letter-spacing: 0.02em;
+  margin-bottom: 3rem;
+  color: var(--white);
+  animation: fade-in 0.8s 0.1s ease both;
+  text-shadow: 0 2px 20px rgba(0,0,0,0.8);
+}
+
+.hero-h1 .line2 {
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--red);
+  display: block;
+}
+
+.hero-h1 .line3 {
+  color: var(--red);
+  display: block;
+}
+
+.hero-body {
+  max-width: 480px;
+  font-size: 0.95rem;
+  line-height: 2;
+  color: #dddddd;
+  font-weight: 300;
+  margin-bottom: 3rem;
+  animation: fade-in 0.8s 0.2s ease both;
+  text-shadow: 0 1px 8px rgba(0,0,0,0.9);
+}
+
+.hero-actions {
+  display: flex;
+  gap: 1px;
+  animation: fade-in 0.8s 0.3s ease both;
+}
+
+.btn-white {
+  background: var(--white);
+  color: var(--black);
+  border: none;
+  padding: 1rem 2.5rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  transition: all 0.2s;
+}
+
+.btn-white:hover { background: var(--red); color: var(--white); }
+
+.btn-outline {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  padding: 1rem 2.5rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  transition: all 0.2s;
+}
+
+.btn-outline:hover { border-color: var(--white); color: var(--white); }
+
+.hero-scroll {
+  display: none;
+}
+
+/* WORKS SECTION */
+.works-section {
+  padding: 4rem;
+  background: var(--white);
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #dddddd;
+}
+
+.section-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2rem;
+  letter-spacing: 0.15em;
+  color: var(--black);
+}
+
+.filters {
+  display: flex;
+  gap: 0;
+}
+
+.filter-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: #888888;
+  padding: 0.5rem 1.2rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  transition: all 0.2s;
+  margin-left: -1px;
+}
+
+.filter-btn:hover, .filter-btn.active {
+  background: var(--black);
+  color: var(--white);
+  border-color: var(--white);
+  z-index: 1;
+}
+
+/* WORK CARDS */
+.works-list { display: flex; flex-direction: column; }
+
+.work-card {
+  display: grid;
+  grid-template-columns: 200px 1fr 160px;
+  border: 1px solid var(--border);
+  margin-bottom: -1px;
+  transition: all 0.25s;
+  position: relative;
+  overflow: hidden;
+  animation: fade-in 0.5s ease both;
+  cursor: pointer;
+}
+
+.work-card::before { display: none; }
+
+.work-card:hover { border-color: var(--red); z-index: 1; }
+
+.work-card > * { position: relative; z-index: 1; }
+
+.work-left {
+  padding: 2rem;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: #0a0a0a;
+  transition: background 0.25s, border-color 0.25s;
+}
+
+.work-card:hover .work-left {
+  background: var(--red);
+  border-right-color: var(--red);
+}
+
+.work-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 4rem;
+  line-height: 1;
+  color: var(--border);
+  transition: color 0.25s;
+}
+
+.work-card:hover .work-num { color: var(--white); }
+
+.work-format-badge {
+  display: inline-block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid;
+  transition: all 0.25s;
+}
+
+.work-format-badge.manga { border-color: var(--red); color: var(--red); }
+.work-format-badge.novel { border-color: #4488ff; color: #4488ff; }
+.work-card:hover .work-format-badge { border-color: var(--white); color: var(--white); }
+
+.work-mid {
+  padding: 2rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1rem;
+  background: #0d0d0d;
+  transition: background 0.25s;
+}
+
+.work-card:hover .work-mid { background: #1a0000; }
+
+.work-genre {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  color: #777777;
+  text-transform: uppercase;
+  transition: color 0.25s;
+}
+
+.work-card:hover .work-genre { color: #ff8888; }
+
+.work-title {
+  font-family: 'Noto Serif JP', serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: 0.02em;
+  color: var(--white);
+}
+
+.work-synopsis {
+  font-size: 0.8rem;
+  line-height: 1.9;
+  color: #aaaaaa;
+  font-weight: 300;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  transition: color 0.25s;
+}
+
+.work-card:hover .work-synopsis { color: #dddddd; }
+
+.work-bottom-row {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.work-meta {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.6rem;
+  color: #777777;
+  letter-spacing: 0.1em;
+  transition: color 0.25s;
+}
+
+.work-card:hover .work-meta { color: #ff8888; }
+
+.work-right {
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  gap: 1.5rem;
+  background: #0a0a0a;
+  transition: background 0.25s, border-color 0.25s;
+}
+
+.work-card:hover .work-right {
+  background: #1a0000;
+  border-left-color: var(--red);
+}
+
+.work-price {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+}
+
+.work-price-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2.2rem;
+  letter-spacing: 0.05em;
+  color: var(--white);
+  display: block;
+  line-height: 1;
+}
+
+.work-price-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.55rem;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  display: block;
+}
+
+.btn-card {
+  width: 100%;
+  background: transparent;
+  color: var(--white);
+  border: 1px solid var(--border);
+  padding: 0.7rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  transition: all 0.2s;
+}
+
+.btn-card:hover, .btn-card.primary {
+  background: var(--white);
+  color: var(--black);
+  border-color: var(--white);
+}
+
+.btn-card.primary:hover { background: var(--red); border-color: var(--red); color: var(--white); }
+
+/* MODAL */
+.overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.9);
+  z-index: 500;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  backdrop-filter: blur(4px);
+}
+
+.overlay.open { display: flex; }
+
+.modal {
+  background: var(--black);
+  border: 1px solid var(--border);
+  max-width: 640px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.modal-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.2rem 2rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--dim);
+}
+
+.modal-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.3em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.modal-close {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  width: 28px; height: 28px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.modal-close:hover { background: var(--red); border-color: var(--red); color: var(--white); }
+
+.modal-content { padding: 2rem; }
+
+.modal-title {
+  font-family: 'Noto Serif JP', serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  line-height: 1.3;
+}
+
+.modal-badges { display: flex; gap: 0.5rem; margin-bottom: 2rem; margin-top: 0.8rem; }
+
+.modal-synopsis-box {
+  background: var(--dim);
+  border-left: 2px solid var(--red);
+  padding: 1.5rem;
+  font-size: 0.85rem;
+  line-height: 2;
+  color: #cccccc;
+  font-weight: 300;
+  margin-bottom: 2rem;
+}
+
+.modal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid var(--border);
+  margin-bottom: 2rem;
+}
+
+.modal-grid-item {
+  padding: 1.2rem 1.5rem;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-grid-item:nth-child(2n) { border-right: none; }
+.modal-grid-item:nth-last-child(-n+2) { border-bottom: none; }
+
+.mgrid-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.25em;
+  color: var(--muted);
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 0.4rem;
+}
+
+.mgrid-val {
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: var(--white);
+}
+
+.modal-acquire-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid var(--border);
+  padding: 1.5rem 2rem;
+  background: var(--dim);
+  gap: 2rem;
+}
+
+.modal-price-big {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 3rem;
+  line-height: 1;
+  color: var(--white);
+}
+
+.modal-price-sub {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  margin-top: 0.3rem;
+}
+
+.btn-acquire-main {
+  background: var(--white);
+  color: var(--black);
+  border: none;
+  padding: 1rem 2rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.btn-acquire-main:hover { background: var(--red); color: var(--white); }
+
+/* FORM */
+.form-block { margin-bottom: 1.5rem; }
+
+.form-lbl {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: block;
+  margin-bottom: 0.6rem;
+}
+
+.form-ctrl {
+  width: 100%;
+  background: var(--dim);
+  border: 1px solid var(--border);
+  color: var(--white);
+  padding: 0.9rem 1rem;
+  font-family: 'Noto Serif JP', serif;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s;
+  -webkit-appearance: none;
+}
+
+.form-ctrl::placeholder { color: var(--muted); }
+.form-ctrl:focus { border-color: var(--white); }
+
+textarea.form-ctrl { resize: vertical; min-height: 130px; line-height: 1.8; }
+
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+.btn-submit {
+  width: 100%;
+  background: var(--white);
+  color: var(--black);
+  border: none;
+  padding: 1.1rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  transition: all 0.2s;
+  margin-top: 0.5rem;
+}
+
+.btn-submit:hover { background: var(--red); color: var(--white); }
+
+/* TOAST */
+.toast {
+  position: fixed;
+  bottom: 2.5rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--white);
+  color: var(--black);
+  padding: 1rem 2rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  z-index: 1000;
+  opacity: 0;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* EMPTY */
+.empty-state {
+  padding: 5rem 2rem;
+  text-align: center;
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.empty-state p {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+/* ANIMATIONS */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--black); }
+::-webkit-scrollbar-thumb { background: var(--border); }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+.work-reactions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-left: auto;
+}
+
+.reaction-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+}
+
+.reaction-icon {
+  display: flex;
+  align-items: center;
+  line-height: 1;
+  color: #777777;
+  transition: transform 0.15s, color 0.2s;
+}
+
+.reaction-item:hover .reaction-icon { transform: scale(1.2); color: var(--white); }
+
+.reaction-count {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.6rem;
+  color: #777777;
+  transition: color 0.2s;
+}
+
+.reaction-item:hover .reaction-count { color: var(--white); }
+
+.author-link {
+  text-decoration: underline;
+  text-decoration-color: #444;
+  transition: color 0.2s;
+}
+.author-link:hover { color: var(--white) !important; text-decoration-color: var(--white); }
+
+.prof-work-item {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid #222;
+  background: #0a0a0a;
+  transition: border-color 0.2s;
+  cursor: pointer;
+}
+.prof-work-item:hover { border-color: var(--white); }
+.prof-work-title {
+  font-size: 0.85rem;
+  flex: 1;
+  color: var(--white);
+}
+.prof-work-status {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  color: #4488ff;
+}
+.prof-work-status.sold { color: #555; }
+
+/* FOOTER */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 2rem 4rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.footer-logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.2rem;
+  letter-spacing: 0.3em;
+  color: var(--muted);
+}
+
+.footer-note {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--border);
+  letter-spacing: 0.1em;
+}
+
+@media (max-width: 768px) {
+  .hero { padding: 4rem 1.5rem; padding-top: calc(56px + 2rem); }
+  .hero-bg-text { display: none; }
+  .works-section { padding: 2rem 1.5rem; }
+  .work-card { grid-template-columns: 1fr; }
+  .work-left { flex-direction: row; align-items: center; padding: 1rem 1.5rem; border-right: none; border-bottom: 1px solid var(--border); }
+  .work-right { border-left: none; border-top: 1px solid var(--border); flex-direction: row; padding: 1rem 1.5rem; }
+  .stats { grid-template-columns: 1fr 1fr; }
+  .modal-acquire-bar { flex-direction: column; align-items: flex-start; }
+  .form-row { grid-template-columns: 1fr; }
+  footer { padding: 1.5rem; flex-direction: column; gap: 0.5rem; text-align: center; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <a class="logo-wrap" href="#">
+    <div class="logo-box"><div class="logo-box-inner"></div></div>
+    <span class="logo-text">BLACK BOX</span>
+  </a>
+  <nav>
+    <a href="#works" class="active">すべて</a>
+    <a href="#" onclick="setFilter('manga'); return false;">漫画</a>
+    <a href="#" onclick="setFilter('novel'); return false;">小説</a>
+    <a href="#" id="nav-auth-btn" class="nav-post" onclick="openLogin(); return false;">ログイン</a>
+  </nav>
+</header>
+
+<!-- HERO -->
+<section class="hero" id="top">
+  <div class="hero-bg-text">BB</div>
+  <div class="hero-eyebrow">未完作品の完全譲渡市場</div>
+  <h1 class="hero-h1">
+    描いた。
+    <span class="line2">続きは</span>
+    <span class="line3">あなたへ。</span>
+  </h1>
+  <p class="hero-body">
+    0→1を作れるが続けられない作家と、1→100を描けるが始められない作家をつなぐ。
+    作品の権利を完全譲渡し、次のページを誰かに委ねる場所。
+  </p>
+  <div class="hero-actions">
+    <a href="#works" class="btn-white">
+      <span>作品を見る</span>
+      <span>↓</span>
+    </a>
+    <a href="#" class="btn-outline" onclick="openPost(); return false;">投稿する</a>
+  </div>
+  <div class="hero-scroll"></div>
+</section>
+
+<!-- WORKS -->
+<section class="works-section" id="works">
+  <div class="section-head">
+    <h2 class="section-title">掲載中の作品</h2>
+  </div>
+  <div class="works-list" id="works-list"></div>
+</section>
+
+<footer>
+  <span class="footer-logo">BLACK BOX</span>
+  <span class="footer-note">試作版 v0.1 — 未完作品の完全譲渡市場</span>
+</footer>
+
+<!-- DETAIL MODAL -->
+<div class="overlay" id="detail-overlay">
+  <div class="modal">
+    <div class="modal-top-bar">
+      <span class="modal-label">作品詳細</span>
+      <button class="modal-close" onclick="closeOverlay('detail-overlay')">✕</button>
+    </div>
+    <div class="modal-content">
+      <div class="modal-badges" id="d-badges"></div>
+      <div class="modal-title" id="d-title"></div>
+      <div class="modal-synopsis-box" id="d-synopsis"></div>
+      <div class="modal-grid">
+        <div class="modal-grid-item">
+          <span class="mgrid-label">ジャンル</span>
+          <span class="mgrid-val" id="d-genre"></span>
+        </div>
+        <div class="modal-grid-item">
+          <span class="mgrid-label">作者</span>
+          <span class="mgrid-val" id="d-author"></span>
+        </div>
+        <div class="modal-grid-item">
+          <span class="mgrid-label">形式</span>
+          <span class="mgrid-val" id="d-format"></span>
+        </div>
+        <div class="modal-grid-item">
+          <span class="mgrid-label">投稿日</span>
+          <span class="mgrid-val" id="d-date"></span>
+        </div>
+      </div>
+      <div class="modal-acquire-bar">
+        <div>
+          <div class="modal-price-big" id="d-price"></div>
+          <div class="modal-price-sub">完全譲渡 — 続編・商用利用・再販すべて可</div>
+        </div>
+        <button class="btn-acquire-main" id="d-acquire-btn">ACQUIRE RIGHTS</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- POST MODAL -->
+<div class="overlay" id="post-overlay">
+  <div class="modal">
+    <div class="modal-top-bar">
+      <span class="modal-label">作品を投稿する</span>
+      <button class="modal-close" onclick="closeOverlay('post-overlay')">✕</button>
+    </div>
+    <div class="modal-content">
+      <div class="form-block">
+        <label class="form-lbl">タイトル *</label>
+        <input type="text" class="form-ctrl" id="f-title" placeholder="作品タイトル">
+      </div>
+      <div class="form-row">
+        <div class="form-block">
+          <label class="form-lbl">形式 *</label>
+          <select class="form-ctrl" id="f-format">
+            <option value="manga">漫画</option>
+            <option value="novel">小説</option>
+          </select>
+        </div>
+        <div class="form-block">
+          <label class="form-lbl">ジャンル</label>
+          <input type="text" class="form-ctrl" id="f-genre" placeholder="SF、ホラー、恋愛…">
+        </div>
+      </div>
+      <div class="form-block">
+        <label class="form-lbl">あらすじ・第1話の内容 *</label>
+        <textarea class="form-ctrl" id="f-synopsis" placeholder="どんな話か、どこで止まっているかを書いてください"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-block">
+          <label class="form-lbl">ペンネーム</label>
+          <input type="text" class="form-ctrl" id="f-author" placeholder="匿名可">
+        </div>
+        <div class="form-block">
+          <label class="form-lbl">譲渡価格（¥）*</label>
+          <input type="number" class="form-ctrl" id="f-price" placeholder="例: 500" min="0">
+        </div>
+      </div>
+      <button class="btn-submit" onclick="submitWork()">投稿する →</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOGIN MODAL -->
+<div class="overlay" id="login-overlay">
+  <div class="modal">
+    <div class="modal-top-bar">
+      <span class="modal-label">ログイン</span>
+      <button class="modal-close" onclick="closeOverlay('login-overlay')">✕</button>
+    </div>
+    <div class="modal-content">
+      <p style="font-size:0.8rem;color:#888;font-family:'IBM Plex Mono',monospace;letter-spacing:0.05em;margin-bottom:1.5rem;line-height:1.8;">これはプロトタイプです。ユーザーを選んでログインしてください。</p>
+      <div style="display:flex;flex-direction:column;gap:1px;">
+        <button class="btn-submit" style="margin:0;" onclick="doLogin('ミヤモト')">ミヤモト としてログイン</button>
+        <button class="btn-submit" style="margin:0;background:#111;color:#fff;border:1px solid #333;" onclick="doLogin('カワハラ')">カワハラ としてログイン</button>
+        <button class="btn-submit" style="margin:0;background:#111;color:#fff;border:1px solid #333;" onclick="doLogin('タナカ K')">タナカ K としてログイン</button>
+        <button class="btn-submit" style="margin:0;background:#111;color:#fff;border:1px solid #333;" onclick="doLogin('あなた')">新規ユーザーとしてログイン</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PROFILE MODAL -->
+<div class="overlay" id="profile-overlay">
+  <div class="modal">
+    <div class="modal-top-bar">
+      <span class="modal-label">プロフィール</span>
+      <button class="modal-close" onclick="closeOverlay('profile-overlay')">✕</button>
+    </div>
+    <div class="modal-content">
+      <div style="margin-bottom:2rem;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:0.1em;margin-bottom:0.5rem;" id="prof-name"></div>
+        <div style="font-size:0.85rem;color:#aaa;line-height:1.8;font-weight:300;" id="prof-bio"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;border:1px solid #333;margin-bottom:2rem;">
+        <div style="padding:1.2rem 1.5rem;border-right:1px solid #333;">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#555;letter-spacing:0.2em;display:block;margin-bottom:0.4rem;">投稿数</span>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:2rem;display:block;" id="prof-posts">0</span>
+        </div>
+        <div style="padding:1.2rem 1.5rem;border-right:1px solid #333;">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#555;letter-spacing:0.2em;display:block;margin-bottom:0.4rem;">譲渡実績</span>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:2rem;display:block;" id="prof-transfers">0</span>
+        </div>
+        <div style="padding:1.2rem 1.5rem;">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#555;letter-spacing:0.2em;display:block;margin-bottom:0.4rem;">売上合計</span>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:2rem;display:block;" id="prof-revenue">¥0</span>
+        </div>
+      </div>
+      <div style="margin-bottom:1.5rem;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.6rem;color:#555;letter-spacing:0.2em;margin-bottom:1rem;">投稿作品</div>
+        <div id="prof-works" style="display:flex;flex-direction:column;gap:1px;"></div>
+      </div>
+      <button class="btn-submit" id="prof-logout-btn" style="display:none;background:#333;color:#fff;" onclick="doLogout()">ログアウト</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// --- AUTH ---
+let currentUser = null;
+
+const users = [
+  { id: 'u1', name: 'ミヤモト', bio: 'SF・実験的な世界観が得意。1話は描けるが続きが思い浮かばないタイプ。', posts: 3, transfers: 2 },
+  { id: 'u2', name: '匿名',     bio: '',    posts: 1, transfers: 1 },
+  { id: 'u3', name: 'カワハラ', bio: '日常系・不条理コメディ専門。絵は描けるがプロット力がない。', posts: 2, transfers: 1 },
+  { id: 'u4', name: 'タナカ K', bio: 'コメディ法廷もの。テンポ重視で書いている。', posts: 4, transfers: 3 },
+  { id: 'demo', name: 'あなた', bio: 'プロフィール未設定', posts: 0, transfers: 0 },
+];
+
+function getUserByName(name) {
+  return users.find(u => u.name === name) || { id: null, name, bio: '', posts: 0, transfers: 0 };
+}
+
+// --- WORKS ---
+let works = [
+  { id: 1, title: '砂漠の底で魚が泳ぐ',         format: 'manga',  genre: 'SF / 実験的',    author: 'ミヤモト', synopsis: '地球の水が全て砂に変わった世界。元漁師の少女リョウは砂の中を泳ぐ謎の生物を発見する。第1話で彼女が生物を追って砂漠の深部へ潜っていくシーンで終わっている。続きのビジョンが全くないため譲渡。世界観だけは自信がある。', price: 0,    date: '2026-01-12', status: 'available', likes: 12, comments: 3, liked: false },
+  { id: 2, title: '月曜の朝、彼女は死んでいた',   format: 'novel',  genre: 'ミステリー',      author: '匿名',     synopsis: '主人公の隣人が毎週月曜日の朝に死んでいる。でも火曜日には生き返っている。誰も気にしていない。第1話で主人公だけがこの異常に気づくところまで書いた。なぜそうなっているのかは自分でも決めていない。', price: 0,    date: '2026-01-28', status: 'available', likes: 8,  comments: 1, liked: false },
+  { id: 3, title: 'おじいちゃんの右手だけが若い', format: 'manga',  genre: '日常 / 不条理',  author: 'カワハラ', synopsis: '83歳の祖父の右手だけが20代の手をしている。家族は誰も触れない話題。孫の視点で、その右手の秘密に迫ろうとする話。1話は孫が初めて祖父の右手に触れる場面で終わっている。ゆっくり丁寧に書ける人に渡したい。', price: 500,  date: '2026-02-03', status: 'available', likes: 24, comments: 7, liked: false },
+  { id: 4, title: '嘘しかつけない弁護士',         format: 'novel',  genre: 'コメディ / 法廷', author: 'タナカ K', synopsis: '呪いにより物理的に嘘しかつけなくなった敏腕弁護士が、それでも無実の依頼人を救おうとする話。1話で呪いの発覚と最初の法廷シーンまで書いた。ギャグと感動を両立できる人に。', price: 1000, date: '2026-02-10', status: 'available', likes: 5,  comments: 2, liked: false },
+];
+
+let currentFilter = 'all';
+let currentId = null;
+
+function available() { return works.filter(w => w.status === 'available'); }
+function filtered() {
+  const av = available();
+  return currentFilter === 'all' ? av : av.filter(w => w.format === currentFilter);
+}
+
+function updateStats() {
+  // statsバー削除済み
+}
+
+function render() {
+  const list = document.getElementById('works-list');
+  const data = filtered();
+  updateStats();
+
+  if (!data.length) {
+    list.innerHTML = `<div class="empty-state"><p>該当する作品がありません</p></div>`;
+    return;
+  }
+
+  list.innerHTML = data.map((w, i) => `
+    <div class="work-card" onclick="openDetail(${w.id})" style="animation-delay:${i * 0.07}s">
+      <div class="work-left">
+        <div class="work-num">0${i+1}</div>
+        <span class="work-format-badge ${w.format}">${w.format === 'manga' ? '漫画' : '小説'}</span>
+      </div>
+      <div class="work-mid">
+        <div>
+          <div class="work-genre">${w.genre}</div>
+          <div class="work-title">${w.title}</div>
+        </div>
+        <div class="work-synopsis">${w.synopsis}</div>
+        <div class="work-bottom-row">
+          <span class="work-meta author-link" onclick="event.stopPropagation(); openProfile('${w.author}')">by ${w.author}</span>
+          <span class="work-meta">${w.date}</span>
+          <span class="work-reactions">
+            <span class="reaction-item" onclick="event.stopPropagation(); toggleLike(${w.id})">
+              <span class="reaction-icon">${w.liked ? '♥' : '♡'}</span>
+              <span class="reaction-count">${w.likes}</span>
+            </span>
+            <span class="reaction-item">
+              <span class="reaction-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+              </span>
+              <span class="reaction-count">${w.comments}</span>
+            </span>
+          </span>
+        </div>
+      </div>
+      <div class="work-right">
+        <div class="work-price">
+          <span class="work-price-num">${w.price === 0 ? '¥0' : '¥' + w.price.toLocaleString()}</span>
+          <span class="work-price-label">完全譲渡</span>
+        </div>
+        <button class="btn-card primary" onclick="event.stopPropagation(); openDetail(${w.id})">詳細 →</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function setFilter(type) {
+  currentFilter = type;
+  document.querySelectorAll('.filter-btn').forEach((b, i) => {
+    b.classList.toggle('active', ['all','manga','novel'][i] === type);
+  });
+  render();
+}
+
+// --- AUTH UI ---
+function updateAuthUI() {
+  const btn = document.getElementById('nav-auth-btn');
+  if (currentUser) {
+    btn.textContent = currentUser.name;
+    btn.onclick = (e) => { e.preventDefault(); openProfile(currentUser.name); };
+  } else {
+    btn.textContent = 'ログイン';
+    btn.onclick = (e) => { e.preventDefault(); openLogin(); };
+  }
+}
+
+function openLogin() {
+  document.getElementById('login-overlay').classList.add('open');
+}
+
+function doLogin(name) {
+  currentUser = users.find(u => u.name === name) || { id: 'demo', name, bio: 'プロフィール未設定', posts: 0, transfers: 0 };
+  closeOverlay('login-overlay');
+  updateAuthUI();
+  toast(`${currentUser.name} としてログインしました`);
+}
+
+function doLogout() {
+  currentUser = null;
+  closeOverlay('profile-overlay');
+  updateAuthUI();
+  toast('ログアウトしました');
+}
+
+// --- PROFILE ---
+function openProfile(authorName) {
+  const u = getUserByName(authorName);
+  const isMe = currentUser && currentUser.name === authorName;
+  const authorWorks = works.filter(w => w.author === authorName);
+  const transferred = works.filter(w => w.author === authorName && w.status === 'sold').length;
+  const revenue = works.filter(w => w.author === authorName && w.status === 'sold').reduce((s,w) => s+w.price, 0);
+
+  document.getElementById('prof-name').textContent = u.name;
+  document.getElementById('prof-bio').textContent = u.bio || 'プロフィール未設定';
+  document.getElementById('prof-posts').textContent = authorWorks.length;
+  document.getElementById('prof-transfers').textContent = transferred;
+  document.getElementById('prof-revenue').textContent = `¥${revenue.toLocaleString()}`;
+  document.getElementById('prof-logout-btn').style.display = isMe ? 'block' : 'none';
+
+  const workList = document.getElementById('prof-works');
+  if (authorWorks.length === 0) {
+    workList.innerHTML = `<p style="font-family:'IBM Plex Mono',monospace;font-size:0.7rem;color:#555;letter-spacing:0.1em;">投稿作品なし</p>`;
+  } else {
+    workList.innerHTML = authorWorks.map(w => `
+      <div class="prof-work-item" onclick="closeOverlay('profile-overlay'); openDetail(${w.id})">
+        <span class="work-format-badge ${w.format}" style="font-size:0.5rem;padding:0.2rem 0.5rem;">${w.format === 'manga' ? '漫画' : '小説'}</span>
+        <span class="prof-work-title">${w.title}</span>
+        <span class="prof-work-status ${w.status === 'sold' ? 'sold' : ''}">${w.status === 'sold' ? '譲渡済' : '募集中'}</span>
+      </div>
+    `).join('');
+  }
+
+  document.getElementById('profile-overlay').classList.add('open');
+}
+
+// --- DETAIL ---
+function openDetail(id) {
+  const w = works.find(x => x.id === id);
+  if (!w) return;
+  currentId = id;
+
+  document.getElementById('d-badges').innerHTML = `<span class="work-format-badge ${w.format}">${w.format === 'manga' ? '漫画' : '小説'}</span>`;
+  document.getElementById('d-title').textContent = w.title;
+  document.getElementById('d-synopsis').textContent = w.synopsis;
+  document.getElementById('d-genre').textContent = w.genre;
+  document.getElementById('d-author').innerHTML = `<span class="author-link" onclick="closeOverlay('detail-overlay'); openProfile('${w.author}')">${w.author}</span>`;
+  document.getElementById('d-format').textContent = w.format === 'manga' ? '漫画' : '小説';
+  document.getElementById('d-date').textContent = w.date;
+  document.getElementById('d-price').textContent = w.price === 0 ? '¥0' : `¥${w.price.toLocaleString()}`;
+  document.getElementById('d-price').style.color = 'var(--white)';
+
+  const btn = document.getElementById('d-acquire-btn');
+  if (!currentUser) {
+    btn.textContent = 'ログインが必要です';
+    btn.style.background = '#333';
+    btn.style.color = '#666';
+  } else {
+    btn.textContent = w.price === 0 ? '無料で権利を取得 →' : '権利を取得する →';
+    btn.style.background = '';
+    btn.style.color = '';
+  }
+
+  document.getElementById('detail-overlay').classList.add('open');
+}
+
+document.getElementById('d-acquire-btn').addEventListener('click', () => {
+  if (!currentUser) { toast('ログインが必要です'); return; }
+  const w = works.find(x => x.id === currentId);
+  if (!w) return;
+  w.status = 'sold';
+  closeOverlay('detail-overlay');
+  render();
+  toast(`「${w.title}」の権利を取得しました`);
+});
+
+// --- POST ---
+function openPost() {
+  if (!currentUser) { openLogin(); return; }
+  document.getElementById('post-overlay').classList.add('open');
+}
+
+function closeOverlay(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+document.querySelectorAll('.overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
+});
+
+function submitWork() {
+  if (!currentUser) { toast('ログインが必要です'); return; }
+  const title = document.getElementById('f-title').value.trim();
+  const synopsis = document.getElementById('f-synopsis').value.trim();
+  const price = parseInt(document.getElementById('f-price').value);
+
+  if (!title || !synopsis || isNaN(price) || price < 0) {
+    toast('タイトル、あらすじ、価格を入力してください');
+    return;
+  }
+
+  works.unshift({
+    id: Date.now(),
+    title,
+    format: document.getElementById('f-format').value,
+    genre: document.getElementById('f-genre').value || '未設定',
+    author: currentUser.name,
+    synopsis,
+    price,
+    date: new Date().toISOString().slice(0, 10),
+    status: 'available'
+  });
+
+  currentUser.posts = (currentUser.posts || 0) + 1;
+  closeOverlay('post-overlay');
+  render();
+  toast(`「${title}」を投稿しました`);
+  ['f-title','f-genre','f-synopsis','f-author','f-price'].forEach(id => document.getElementById(id).value = '');
+}
+
+function toggleLike(id) {
+  if (!currentUser) { toast('ログインが必要です'); return; }
+  const w = works.find(x => x.id === id);
+  if (!w) return;
+  w.liked = !w.liked;
+  w.likes += w.liked ? 1 : -1;
+  render();
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+updateAuthUI();
+render();
+</script>
+</body>
+</html>
