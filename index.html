@@ -60,7 +60,7 @@ header {
   border-bottom: 1px solid var(--border);
   background: rgba(0,0,0,0.95);
   backdrop-filter: blur(10px);
-  height: 56px;
+  height: 70px;
 }
 
 .logo-wrap {
@@ -126,9 +126,47 @@ nav a.active { color: var(--white); }
 
 .nav-post:hover { background: var(--red) !important; color: var(--white) !important; }
 
+.nav-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.nav-avatar:hover { background: var(--red); }
+.nav-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.nav-avatar svg { display: block; }
+
+.nav-avatar-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0 0.75rem;
+  border-left: 1px solid var(--border);
+  cursor: crosshair;
+  transition: background 0.2s;
+}
+
+.nav-avatar-wrap:hover { background: var(--dim); }
+
+.nav-avatar-name {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.5rem;
+  letter-spacing: 0.1em;
+  color: #888;
+}
+
 /* HERO */
 .hero {
-  padding-top: 56px;
+  padding-top: 70px;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -803,7 +841,123 @@ textarea.form-ctrl { resize: vertical; min-height: 130px; line-height: 1.8; }
 }
 .prof-work-status.sold { color: #555; }
 
-/* FOOTER */
+/* READER PAGE */
+.reader-page-wrap {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: #f9f6f1;
+  z-index: 200;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.reader-page-wrap.open { display: flex; }
+
+.reader-page-header {
+  position: sticky;
+  top: 0;
+  background: #f9f6f1;
+  border-bottom: 1px solid #ddd;
+  padding: 0.8rem 2rem;
+  display: flex;
+  align-items: center;
+  z-index: 10;
+}
+
+.reader-page-title {
+  font-family: 'Noto Serif JP', serif;
+  font-size: 0.9rem;
+  color: #333;
+  letter-spacing: 0.05em;
+}
+
+.reader-back-btn {
+  background: none;
+  border: 1px solid #ccc;
+  color: #555;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.15em;
+  padding: 0.4rem 1rem;
+  transition: all 0.2s;
+}
+
+.reader-back-btn:hover { border-color: #333; color: #333; }
+
+.reader-content {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 4rem 2rem 8rem;
+  width: 100%;
+}
+
+.reader-content h1 {
+  font-family: 'Noto Serif JP', serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #111;
+  margin-bottom: 0.5rem;
+  line-height: 1.4;
+}
+
+.reader-content .reader-meta {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.65rem;
+  color: #999;
+  letter-spacing: 0.1em;
+  margin-bottom: 3rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #ddd;
+}
+
+.reader-paragraph {
+  font-family: 'Noto Serif JP', serif;
+  font-size: 1rem;
+  line-height: 2.2;
+  color: #222;
+  margin-bottom: 1.8rem;
+}
+
+/* READER */
+
+.nav-user-wrap {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+}
+
+.nav-dropdown {
+  display: none;
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: var(--black);
+  border: 1px solid var(--border);
+  min-width: 160px;
+  z-index: 200;
+  flex-direction: column;
+}
+
+.nav-dropdown.open { display: flex; }
+
+.nav-dropdown button {
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  color: #aaa;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  padding: 0.9rem 1.2rem;
+  text-align: left;
+  transition: all 0.2s;
+  cursor: crosshair;
+}
+
+.nav-dropdown button:last-child { border-bottom: none; }
+.nav-dropdown button:hover { background: var(--dim); color: var(--white); }
+
 footer {
   border-top: 1px solid var(--border);
   padding: 2rem 4rem;
@@ -848,10 +1002,17 @@ footer {
     <span class="logo-text">BLACK BOX</span>
   </a>
   <nav>
-    <a href="#works" class="active">すべて</a>
+    <a href="#works" class="active" onclick="setFilter('all'); return false;">すべて</a>
     <a href="#" onclick="setFilter('manga'); return false;">漫画</a>
     <a href="#" onclick="setFilter('novel'); return false;">小説</a>
-    <a href="#" id="nav-auth-btn" class="nav-post" onclick="openLogin(); return false;">ログイン</a>
+    <div class="nav-user-wrap" id="nav-user-wrap">
+      <a href="#" id="nav-auth-btn" class="nav-post" onclick="handleAuthClick(event)">ログイン</a>
+      <div class="nav-dropdown" id="nav-dropdown">
+        <button onclick="goToMyProfile()">マイプロフィール</button>
+        <button onclick="openSettings()">アカウント設定</button>
+        <button onclick="doLogout()">ログアウト</button>
+      </div>
+    </div>
   </nav>
 </header>
 
@@ -925,7 +1086,10 @@ footer {
           <div class="modal-price-big" id="d-price"></div>
           <div class="modal-price-sub">完全譲渡 — 続編・商用利用・再販すべて可</div>
         </div>
-        <button class="btn-acquire-main" id="d-acquire-btn">ACQUIRE RIGHTS</button>
+        <div style="display:flex;flex-direction:column;gap:0.5rem;align-items:flex-end;">
+          <button class="btn-acquire-main" id="d-read-btn" style="display:none;background:#222;color:#fff;border:1px solid #444;" onclick="openReaderFromDetail()">本文を読む →</button>
+          <button class="btn-acquire-main" id="d-acquire-btn">権利を取得する →</button>
+        </div>
       </div>
     </div>
   </div>
@@ -975,6 +1139,27 @@ footer {
   </div>
 </div>
 
+<!-- SETTINGS MODAL -->
+<div class="overlay" id="settings-overlay">
+  <div class="modal">
+    <div class="modal-top-bar">
+      <span class="modal-label">アカウント設定</span>
+      <button class="modal-close" onclick="closeOverlay('settings-overlay')">✕</button>
+    </div>
+    <div class="modal-content">
+      <div class="form-block">
+        <label class="form-lbl">ペンネーム</label>
+        <input type="text" class="form-ctrl" id="s-name" placeholder="名前">
+      </div>
+      <div class="form-block">
+        <label class="form-lbl">自己紹介</label>
+        <textarea class="form-ctrl" id="s-bio" placeholder="一言プロフィール" style="height:100px;"></textarea>
+      </div>
+      <button class="btn-submit" onclick="saveSettings()">保存する →</button>
+    </div>
+  </div>
+</div>
+
 <!-- LOGIN MODAL -->
 <div class="overlay" id="login-overlay">
   <div class="modal">
@@ -985,7 +1170,8 @@ footer {
     <div class="modal-content">
       <p style="font-size:0.8rem;color:#888;font-family:'IBM Plex Mono',monospace;letter-spacing:0.05em;margin-bottom:1.5rem;line-height:1.8;">これはプロトタイプです。ユーザーを選んでログインしてください。</p>
       <div style="display:flex;flex-direction:column;gap:1px;">
-        <button class="btn-submit" style="margin:0;" onclick="doLogin('ミヤモト')">ミヤモト としてログイン</button>
+        <button class="btn-submit" style="margin:0;" onclick="doLogin('朝日')">朝日 としてログイン</button>
+        <button class="btn-submit" style="margin:0;background:#111;color:#fff;border:1px solid #333;" onclick="doLogin('ミヤモト')">ミヤモト としてログイン</button>
         <button class="btn-submit" style="margin:0;background:#111;color:#fff;border:1px solid #333;" onclick="doLogin('カワハラ')">カワハラ としてログイン</button>
         <button class="btn-submit" style="margin:0;background:#111;color:#fff;border:1px solid #333;" onclick="doLogin('タナカ K')">タナカ K としてログイン</button>
         <button class="btn-submit" style="margin:0;background:#111;color:#fff;border:1px solid #333;" onclick="doLogin('あなた')">新規ユーザーとしてログイン</button>
@@ -1029,6 +1215,34 @@ footer {
   </div>
 </div>
 
+<!-- DETAIL FULL PAGE -->
+<div class="reader-page-wrap" id="detail-page">
+  <div class="reader-page-header">
+    <button class="reader-back-btn" onclick="closePage('detail-page')">← 作品一覧に戻る</button>
+  </div>
+  <div class="reader-content">
+    <h1 id="dp-h1"></h1>
+    <div class="reader-meta" id="dp-meta"></div>
+    <div style="font-size:0.95rem;line-height:2.2;color:#333;margin-bottom:3rem;" id="dp-synopsis"></div>
+    <div style="border-top:1px solid #ddd;padding-top:2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+      <div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#999;letter-spacing:0.2em;margin-bottom:0.3rem;">完全譲渡価格</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:2.5rem;color:#111;line-height:1;" id="dp-price"></div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.6rem;color:#999;margin-top:0.3rem;">続編・商用利用・再販すべて可</div>
+      </div>
+      <button class="btn-acquire-main" id="dp-acquire-btn" style="background:#111;color:#fff;" onclick="acquireFromPage()">権利を取得する →</button>
+    </div>
+  </div>
+</div>
+
+<!-- READER FULL PAGE -->
+<div class="reader-page-wrap" id="reader-page">
+  <div class="reader-page-header">
+    <button class="reader-back-btn" onclick="closeReader()">← 作品一覧に戻る</button>
+  </div>
+  <div class="reader-content" id="r-body"></div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1036,8 +1250,9 @@ footer {
 let currentUser = null;
 
 const users = [
+  { id: 'u0', name: '朝日',    bio: 'BLACK BOX創始者', posts: 1, transfers: 0 },
   { id: 'u1', name: 'ミヤモト', bio: 'SF・実験的な世界観が得意。1話は描けるが続きが思い浮かばないタイプ。', posts: 3, transfers: 2 },
-  { id: 'u2', name: '匿名',     bio: '',    posts: 1, transfers: 1 },
+  { id: 'u2', name: '匿名',    bio: '', posts: 1, transfers: 1 },
   { id: 'u3', name: 'カワハラ', bio: '日常系・不条理コメディ専門。絵は描けるがプロット力がない。', posts: 2, transfers: 1 },
   { id: 'u4', name: 'タナカ K', bio: 'コメディ法廷もの。テンポ重視で書いている。', posts: 4, transfers: 3 },
   { id: 'demo', name: 'あなた', bio: 'プロフィール未設定', posts: 0, transfers: 0 },
@@ -1049,10 +1264,37 @@ function getUserByName(name) {
 
 // --- WORKS ---
 let works = [
-  { id: 1, title: '砂漠の底で魚が泳ぐ',         format: 'manga',  genre: 'SF / 実験的',    author: 'ミヤモト', synopsis: '地球の水が全て砂に変わった世界。元漁師の少女リョウは砂の中を泳ぐ謎の生物を発見する。第1話で彼女が生物を追って砂漠の深部へ潜っていくシーンで終わっている。続きのビジョンが全くないため譲渡。世界観だけは自信がある。', price: 0,    date: '2026-01-12', status: 'available', likes: 12, comments: 3, liked: false },
-  { id: 2, title: '月曜の朝、彼女は死んでいた',   format: 'novel',  genre: 'ミステリー',      author: '匿名',     synopsis: '主人公の隣人が毎週月曜日の朝に死んでいる。でも火曜日には生き返っている。誰も気にしていない。第1話で主人公だけがこの異常に気づくところまで書いた。なぜそうなっているのかは自分でも決めていない。', price: 0,    date: '2026-01-28', status: 'available', likes: 8,  comments: 1, liked: false },
-  { id: 3, title: 'おじいちゃんの右手だけが若い', format: 'manga',  genre: '日常 / 不条理',  author: 'カワハラ', synopsis: '83歳の祖父の右手だけが20代の手をしている。家族は誰も触れない話題。孫の視点で、その右手の秘密に迫ろうとする話。1話は孫が初めて祖父の右手に触れる場面で終わっている。ゆっくり丁寧に書ける人に渡したい。', price: 500,  date: '2026-02-03', status: 'available', likes: 24, comments: 7, liked: false },
-  { id: 4, title: '嘘しかつけない弁護士',         format: 'novel',  genre: 'コメディ / 法廷', author: 'タナカ K', synopsis: '呪いにより物理的に嘘しかつけなくなった敏腕弁護士が、それでも無実の依頼人を救おうとする話。1話で呪いの発覚と最初の法廷シーンまで書いた。ギャグと感動を両立できる人に。', price: 1000, date: '2026-02-10', status: 'available', likes: 5,  comments: 2, liked: false },
+  { id: 1, title: '砂漠の底で魚が泳ぐ',         format: 'manga',  genre: 'SF / 実験的',    author: 'ミヤモト', synopsis: '地球の水が全て砂に変わった世界。元漁師の少女リョウは砂の中を泳ぐ謎の生物を発見する。第1話で彼女が生物を追って砂漠の深部へ潜っていくシーンで終わっている。続きのビジョンが全くないため譲渡。世界観だけは自信がある。', price: 0,    date: '2026-01-12', status: 'available', likes: 12, comments: 3, liked: false, body: null },
+  { id: 2, title: '月曜の朝、彼女は死んでいた',   format: 'novel',  genre: 'ミステリー',      author: '匿名',     synopsis: '主人公の隣人が毎週月曜日の朝に死んでいる。でも火曜日には生き返っている。誰も気にしていない。第1話で主人公だけがこの異常に気づくところまで書いた。なぜそうなっているのかは自分でも決めていない。', price: 0,    date: '2026-01-28', status: 'available', likes: 8,  comments: 1, liked: false, body: null },
+  { id: 3, title: 'おじいちゃんの右手だけが若い', format: 'manga',  genre: '日常 / 不条理',  author: 'カワハラ', synopsis: '83歳の祖父の右手だけが20代の手をしている。家族は誰も触れない話題。孫の視点で、その右手の秘密に迫ろうとする話。1話は孫が初めて祖父の右手に触れる場面で終わっている。ゆっくり丁寧に書ける人に渡したい。', price: 500,  date: '2026-02-03', status: 'available', likes: 24, comments: 7, liked: false, body: null },
+  { id: 4, title: '嘘しかつけない弁護士',         format: 'novel',  genre: 'コメディ / 法廷', author: 'タナカ K', synopsis: '呪いにより物理的に嘘しかつけなくなった敏腕弁護士が、それでも無実の依頼人を救おうとする話。1話で呪いの発覚と最初の法廷シーンまで書いた。ギャグと感動を両立できる人に。', price: 1000, date: '2026-02-10', status: 'available', likes: 5,  comments: 2, liked: false, body: null },
+  {
+    id: 5,
+    title: 'ADHD榊原',
+    format: 'novel',
+    genre: '青春 / コメディ',
+    author: '朝日',
+    synopsis: 'ADHDの高校生・榊原棺が入学式の新入生代表挨拶で盛大にやらかす。続きのビジョンはあるが筆が進まないため譲渡。キャラクターの声だけは自信がある。',
+    price: 0,
+    date: '2026-02-21',
+    status: 'available',
+    likes: 0,
+    comments: 0,
+    liked: false,
+    body: [
+      `「ぶち殺してえ...」\n\n高校生の榊原棺（さかきばら ひつぎ）はスーツ姿の魑魅魍魎が跋扈する東京のど真ん中で、深い怒りとともにそれを口にした。`,
+      `そのきっかけはたわいもないもので、言うなれば、こちら側のどちらからも封が切れなかったときや、改札を通ろうとしたらSuicaのチャージ金が不足していて入れなかったときのような、いわゆる、見通しの甘さがきっかけなのだが、\n\n「俺は完全に舐めてた、いや何を舐めてたって、世の中はもっと話の通じる奴が意識的に生活していると思っていた。」\n\n榊原の激しめの独り言が、虚しく都会の雑踏に掻き消されていく。`,
+      `というのも、榊原は、今朝の入学式で早くも高校デビューに失敗していた。\n\n中学時代を泥臭く野球部で過ごした榊原は、その反動から、高校生活は、京都アニメーション制作のアニメのような煌びやかなスクールライフを堪能する予定だった。\n\nしかしながら、入学式の新入生代表挨拶で盛大にやらかす羽目になる。`,
+      `ー 4月8日　AM 10:20　私立不屈野高校入学式 ー\n\n「続いて新入生代表挨拶、1年7組 榊原棺」\n\n3年実行委員の奈良野の呼び掛けに、榊原は威勢よく立ち上がる。\n\n「はい！」\n\nガチャン！\n\n座っていたパイプ椅子が起立の反動で倒れる。`,
+      `事前に担任から手渡されたカンペを持ち、体育館の壇上へと上がると、マイクの位置を調整し、躊躇いなく一言めを放った。\n\n「俺は入学式とかクソだと思ってる！なぜなら、入学ってのは競争の始まりを意味するからだ！クラス内での人気、成績の比較、運動能力の測定、お前らとこれからそれらを比べ合わなければならないと考えるけで息が詰まりそうだ！だから俺は自ら立候補した！最初にリードするために！この新入生代表挨拶に！」`,
+      `赤塚不二夫への弔辞を読んだタモさんを彷彿させるかの如く、榊原はカンペをフル無視してだいぶ長めの一言を息継ぎせず吐き切った。\n\n正確にはタモさんはカンペを無視したわけではないのだが。\n\n「俺は中学時代野球部でそこそこ実力者だったっていうのもあるし、いやまあ、地域の有望な奴らが全員シニアリーグに入ったからっていう事情を差し引いても、俺は中学時代そこそこ実力者だった！」\n\n2回言った。`,
+      `全生徒と教職員がそう思ったであろうタイミングで榊原は一旦息を整え、再びマイクに近づいた。\n\n「ただ、俺の中学生活は空虚だった！幼馴染に勧められてなんとなく野球部に入ったんだけど、その幼馴染は途中で彼女できて部活来なくなったし、なんなら疎遠にもなった！」\n\n息を整えて尚見切り発車な自分語りを続ける榊原を、固唾を飲み見守る生徒と教職員たち。`,
+      `そのやばい空気をいち早く察した榊原は、喋りで時間を繋ぎつつ、急いで話の着地点を探した。\n\n「え〜だから...つまり...高校生活ってのはそういう人間関係とかから解放されたくて、ん〜...あの...部活とかもホントどうでもよくて、マジで勧誘とかもあれ昇降口出たらやってるけど、マジ鬱陶しくない？」`,
+      `傷つけなくていい人たちを思いがけず傷つけてしまったことに動揺を隠しきれない榊原は、最終的に何が話したかったのかわからなくなり、また同時に、素直に担任から手渡されたカンペを丸読みしとけばよかったことを悔い、\n\n「だから、なんか、空き教室とかで放課後お茶とかする部活やりたいので、興味ある人はぜひ...ハハっ」\n\nと無理矢理新入生代表挨拶を胴体着陸させた。`,
+      `榊原が壇上から降りるや否や、実行委員の奈良野は、今見たことを無かったことにするかのように進行を続け、その間、榊原はさっき倒したパイプ椅子を元に戻し、自分の席についた。\n\nーーーーーーーーーーーーーーーーーーーーーーー\n\n「あーーーー！！！！」\n\n入学式の鮮明なフラッシュバックをかき消すように声を張り上げる榊原。近くを歩く熟年OLにビクッとされながらも、榊原は気にせず脳内1人反省会を始めた。`,
+      `「なんであんなこと言っちゃったかな〜...中学時代の話とか別に言わなくて良かったのに...いやまあ...話を聞いてもらうためにはまず自分を知ってもらわなきゃだし、あと昨日の夜トランプ大統領の演説見ちゃったってのも関係してて...」\n\n誰に向けての言い訳なのかもわからない自分の独り言にさらに嫌気がさすと、榊原は、自分の反芻思考を身体で表現するかのように、東京の街を目的なく歩き続けた。\n\n〜つづく〜`,
+    ]
+  },
 ];
 
 let currentFilter = 'all';
@@ -1079,7 +1321,7 @@ function render() {
   }
 
   list.innerHTML = data.map((w, i) => `
-    <div class="work-card" onclick="openDetail(${w.id})" style="animation-delay:${i * 0.07}s">
+    <div class="work-card" onclick="openPage(${w.id})" style="animation-delay:${i * 0.07}s">
       <div class="work-left">
         <div class="work-num">0${i+1}</div>
         <span class="work-format-badge ${w.format}">${w.format === 'manga' ? '漫画' : '小説'}</span>
@@ -1112,7 +1354,7 @@ function render() {
           <span class="work-price-num">${w.price === 0 ? '¥0' : '¥' + w.price.toLocaleString()}</span>
           <span class="work-price-label">完全譲渡</span>
         </div>
-        <button class="btn-card primary" onclick="event.stopPropagation(); openDetail(${w.id})">詳細 →</button>
+        <button class="btn-card primary" onclick="event.stopPropagation(); openPage(${w.id})">作品を読む →</button>
       </div>
     </div>
   `).join('');
@@ -1120,22 +1362,73 @@ function render() {
 
 function setFilter(type) {
   currentFilter = type;
-  document.querySelectorAll('.filter-btn').forEach((b, i) => {
-    b.classList.toggle('active', ['all','manga','novel'][i] === type);
-  });
+  document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+  const navLinks = document.querySelectorAll('nav a');
+  if (type === 'all') navLinks[0].classList.add('active');
+  if (type === 'manga') navLinks[1].classList.add('active');
+  if (type === 'novel') navLinks[2].classList.add('active');
   render();
 }
 
 // --- AUTH UI ---
+const AVATAR_PLACEHOLDER = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`;
+
 function updateAuthUI() {
   const btn = document.getElementById('nav-auth-btn');
   if (currentUser) {
-    btn.textContent = currentUser.name;
-    btn.onclick = (e) => { e.preventDefault(); openProfile(currentUser.name); };
+    btn.className = '';
+    btn.style.cssText = 'display:flex;align-items:stretch;';
+    btn.innerHTML = `
+      <div class="nav-avatar-wrap">
+        <div class="nav-avatar">${currentUser.avatar ? `<img src="${currentUser.avatar}">` : AVATAR_PLACEHOLDER}</div>
+        <span class="nav-avatar-name">${currentUser.name}</span>
+      </div>`;
   } else {
+    btn.className = 'nav-post';
+    btn.style.cssText = '';
     btn.textContent = 'ログイン';
-    btn.onclick = (e) => { e.preventDefault(); openLogin(); };
   }
+}
+
+function handleAuthClick(e) {
+  e.preventDefault();
+  if (!currentUser) { openLogin(); return; }
+  const dd = document.getElementById('nav-dropdown');
+  dd.classList.toggle('open');
+}
+
+// ドロップダウンを外クリックで閉じる
+document.addEventListener('click', e => {
+  const wrap = document.getElementById('nav-user-wrap');
+  if (wrap && !wrap.contains(e.target)) {
+    document.getElementById('nav-dropdown').classList.remove('open');
+  }
+});
+
+function goToMyProfile() {
+  document.getElementById('nav-dropdown').classList.remove('open');
+  openProfile(currentUser.name);
+}
+
+function openSettings() {
+  document.getElementById('nav-dropdown').classList.remove('open');
+  document.getElementById('s-name').value = currentUser.name;
+  document.getElementById('s-bio').value = currentUser.bio || '';
+  document.getElementById('settings-overlay').classList.add('open');
+}
+
+function saveSettings() {
+  const name = document.getElementById('s-name').value.trim();
+  const bio = document.getElementById('s-bio').value.trim();
+  if (!name) { toast('ペンネームを入力してください'); return; }
+  currentUser.name = name;
+  currentUser.bio = bio;
+  // usersリストも更新
+  const u = users.find(x => x.id === currentUser.id);
+  if (u) { u.name = name; u.bio = bio; }
+  updateAuthUI();
+  closeOverlay('settings-overlay');
+  toast('プロフィールを更新しました');
 }
 
 function openLogin() {
@@ -1151,6 +1444,7 @@ function doLogin(name) {
 
 function doLogout() {
   currentUser = null;
+  document.getElementById('nav-dropdown').classList.remove('open');
   closeOverlay('profile-overlay');
   updateAuthUI();
   toast('ログアウトしました');
@@ -1214,7 +1508,14 @@ function openDetail(id) {
     btn.style.color = '';
   }
 
+  document.getElementById('d-read-btn').style.display = w.body ? 'block' : 'none';
+
   document.getElementById('detail-overlay').classList.add('open');
+}
+
+function openReaderFromDetail() {
+  closeOverlay('detail-overlay');
+  openReader(currentId);
 }
 
 document.getElementById('d-acquire-btn').addEventListener('click', () => {
@@ -1269,6 +1570,72 @@ function submitWork() {
   render();
   toast(`「${title}」を投稿しました`);
   ['f-title','f-genre','f-synopsis','f-author','f-price'].forEach(id => document.getElementById(id).value = '');
+}
+
+// --- PAGE NAVIGATION ---
+function openPage(id) {
+  const w = works.find(x => x.id === id);
+  if (!w) return;
+  currentId = id;
+  if (w.body) {
+    openReader(id);
+  } else {
+    // 詳細フルページ
+    document.getElementById('dp-title').textContent = w.title;
+    document.getElementById('dp-h1').textContent = w.title;
+    document.getElementById('dp-meta').innerHTML = `by <span class="author-link" onclick="closePage('detail-page'); openProfile('${w.author}')">${w.author}</span> &nbsp;|&nbsp; ${w.genre} &nbsp;|&nbsp; ${w.format === 'manga' ? '漫画' : '小説'} &nbsp;|&nbsp; ${w.date}`;
+    document.getElementById('dp-synopsis').textContent = w.synopsis;
+    document.getElementById('dp-price').textContent = w.price === 0 ? '¥0' : `¥${w.price.toLocaleString()}`;
+    const btn = document.getElementById('dp-acquire-btn');
+    if (!currentUser) {
+      btn.textContent = 'ログインが必要です';
+      btn.style.background = '#333';
+    } else {
+      btn.textContent = w.price === 0 ? '無料で権利を取得 →' : '権利を取得する →';
+      btn.style.background = '';
+    }
+    document.getElementById('detail-page').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+}
+
+function closePage(id) {
+  document.getElementById(id).classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function acquireFromPage() {
+  if (!currentUser) { toast('ログインが必要です'); return; }
+  const w = works.find(x => x.id === currentId);
+  if (!w) return;
+  w.status = 'sold';
+  closePage('detail-page');
+  render();
+  toast(`「${w.title}」の権利を取得しました`);
+}
+
+// --- READER ---
+function openReader(id) {
+  const w = works.find(x => x.id === id);
+  if (!w || !w.body) return;
+  document.getElementById('r-body').innerHTML = `
+    <h1>${w.title}</h1>
+    <div class="reader-meta">by ${w.author} &nbsp;|&nbsp; ${w.genre} &nbsp;|&nbsp; ${w.date}</div>
+    ${w.body.map(p => `<p class="reader-paragraph">${p.replace(/\n/g, '<br>')}</p>`).join('')}
+  `;
+  document.getElementById('reader-page').scrollTop = 0;
+  document.getElementById('reader-page').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeReader() {
+  document.getElementById('reader-page').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function openReaderFromDetail() {
+  closeOverlay('detail-overlay');
+  openReader(currentId);
 }
 
 function toggleLike(id) {
