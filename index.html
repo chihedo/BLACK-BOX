@@ -1616,7 +1616,7 @@ function render() {
     const episodes = w.seriesId ? getSeriesEpisodes(w.seriesId) : null;
     const totalEp  = episodes ? episodes.length : 1;
     const daysSince = (Date.now() - new Date(w.date).getTime()) / (1000 * 60 * 60 * 24);
-    const isNew    = w.seriesId && totalEp > 1 && daysSince <= 14;
+    const isNew    = daysSince <= 7;
     const epLabel  = w.seriesId ? ` ${w.episode}話` : '';
     const newBadge = isNew ? `<span class="new-badge">NEW</span>` : '';
 
