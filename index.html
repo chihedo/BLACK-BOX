@@ -1227,6 +1227,11 @@ footer {
         <label class="form-lbl">あらすじ・第1話の内容 *</label>
         <textarea class="form-ctrl" id="f-synopsis" placeholder="どんな話か、どこで止まっているかを書いてください"></textarea>
       </div>
+      <div class="form-block" id="f-manga-block" style="display:none;">
+        <label class="form-lbl">漫画原稿（画像ファイル、複数選択可）</label>
+        <input type="file" id="f-manga-files" accept="image/*" multiple style="width:100%;background:#0d0d0d;border:1px solid var(--border);color:#ddd;padding:0.8rem;font-family:'IBM Plex Mono',monospace;font-size:0.65rem;cursor:pointer;">
+        <div id="f-manga-preview" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:0.5rem;"></div>
+      </div>
       <div class="form-block" id="f-series-block">
         <label class="form-lbl">シリーズに追加（続編の場合）</label>
         <select class="form-ctrl" id="f-series">
@@ -2042,7 +2047,28 @@ document.getElementById('d-acquire-btn').addEventListener('click', () => {
 function openPost() {
   if (!currentUser) { openLogin(); return; }
 
-  // シリーズ選択肢を動的生成（既存シリーズのみ）
+  // 形式切り替えで漫画アップロード欄の表示を制御
+  const formatEl = document.getElementById('f-format');
+  const mangaBlock = document.getElementById('f-manga-block');
+  mangaBlock.style.display = formatEl.value === 'manga' ? 'block' : 'none';
+  formatEl.onchange = () => {
+    mangaBlock.style.display = formatEl.value === 'manga' ? 'block' : 'none';
+  };
+
+  // ファイル選択時にサムネプレビュー
+  document.getElementById('f-manga-files').onchange = (e) => {
+    const preview = document.getElementById('f-manga-preview');
+    preview.innerHTML = '';
+    [...e.target.files].forEach((file, i) => {
+      const url = URL.createObjectURL(file);
+      preview.innerHTML += `<div style="position:relative;">
+        <img src="${url}" style="width:60px;height:80px;object-fit:cover;border:1px solid #333;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.4rem;color:#555;text-align:center;">${i+1}p</div>
+      </div>`;
+    });
+  };
+
+  // シリーズ選択肢を動的生成
   const seriesSelect = document.getElementById('f-series');
   const seriesIds = [...new Set(available().filter(w => w.seriesId).map(w => w.seriesId))];
   seriesSelect.innerHTML = '<option value="">新規作品として投稿</option>';
@@ -2073,6 +2099,7 @@ async function submitWork() {
   const synopsis = document.getElementById('f-synopsis').value.trim();
   const price    = parseInt(document.getElementById('f-price').value);
   const seriesId = document.getElementById('f-series').value || null;
+  const format   = document.getElementById('f-format').value;
 
   if (!title || !synopsis || isNaN(price) || price < 0) {
     toast('タイトル、あらすじ、価格を入力してください');
@@ -2086,9 +2113,28 @@ async function submitWork() {
     episode = existing.length + 1;
   }
 
+  // 漫画の場合はファイルをStorageにアップロード
+  let mangaPages = [];
+  if (format === 'manga') {
+    const files = document.getElementById('f-manga-files').files;
+    if (files.length > 0) {
+      toast('原稿をアップロード中...');
+      const folderName = `${currentUser.name}_${Date.now()}`;
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const ext = file.name.split('.').pop();
+        const path = `${folderName}/${String(i+1).padStart(3,'0')}.${ext}`;
+        const { error } = await db.storage.from('manga').upload(path, file);
+        if (error) { toast('アップロード失敗: ' + error.message); return; }
+        const { data: urlData } = db.storage.from('manga').getPublicUrl(path);
+        mangaPages.push(urlData.publicUrl);
+      }
+    }
+  }
+
   const newWork = {
     title,
-    format:    document.getElementById('f-format').value,
+    format,
     genre:     document.getElementById('f-genre').value || '未設定',
     author:    currentUser.name,
     synopsis,
@@ -2096,7 +2142,7 @@ async function submitWork() {
     date:      new Date().toISOString().slice(0, 10),
     status:    'available',
     likes:     0,
-    body:      null,
+    body:      mangaPages.length > 0 ? mangaPages : null,
     series_id: seriesId,
     episode,
   };
@@ -2104,7 +2150,6 @@ async function submitWork() {
   const { data, error } = await db.from('works').insert(newWork).select().single();
   if (error) { toast('投稿に失敗しました: ' + error.message); return; }
 
-  // ローカルにも追加（即時反映）
   works.unshift({ ...data, comments: [], liked: false, seriesId: data.series_id });
 
   currentUser.posts = (currentUser.posts || 0) + 1;
@@ -2115,6 +2160,8 @@ async function submitWork() {
   toast(`「${title}」${seriesId ? ` ${episode}話` : ''}を投稿しました`);
   ['f-title','f-genre','f-synopsis','f-author','f-price'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('f-series').value = '';
+  document.getElementById('f-manga-files').value = '';
+  document.getElementById('f-manga-preview').innerHTML = '';
 }
 
 // --- PREVIEW ---
@@ -2291,12 +2338,27 @@ function openReader(id) {
   const fullTitle = `${w.title}${epLabel}`;
 
   document.getElementById('r-page-title').textContent = fullTitle;
-  document.getElementById('r-body').innerHTML = `
-    <h1>${fullTitle}</h1>
-    <div class="reader-meta">by ${w.author} &nbsp;|&nbsp; ${w.genre} &nbsp;|&nbsp; ${w.date}</div>
-    ${w.body.map(p => `<p class="reader-paragraph">${p.replace(/\n/g, '<br>')}</p>`).join('')}
-    <p style="font-family:'Noto Serif JP',serif;font-size:1rem;color:#111;letter-spacing:0.2em;margin-top:2.5rem;margin-bottom:0.5rem;">— つづく —</p>
-  `;
+
+  // 漫画（画像URL配列）か小説（テキスト配列）かで表示を切り替え
+  const isMangaImages = w.format === 'manga' && Array.isArray(w.body) && w.body.length > 0 && w.body[0].startsWith('http');
+
+  if (isMangaImages) {
+    document.getElementById('r-body').innerHTML = `
+      <h1>${fullTitle}</h1>
+      <div class="reader-meta">by ${w.author} &nbsp;|&nbsp; ${w.genre} &nbsp;|&nbsp; ${w.date}</div>
+      <div style="display:flex;flex-direction:column;gap:0;margin-top:1.5rem;">
+        ${w.body.map(url => `<img src="${url}" style="width:100%;max-width:720px;display:block;margin:0 auto;" loading="lazy">`).join('')}
+      </div>
+      <p style="font-family:'Noto Serif JP',serif;font-size:1rem;color:#111;letter-spacing:0.2em;margin-top:2.5rem;margin-bottom:0.5rem;">— つづく —</p>
+    `;
+  } else {
+    document.getElementById('r-body').innerHTML = `
+      <h1>${fullTitle}</h1>
+      <div class="reader-meta">by ${w.author} &nbsp;|&nbsp; ${w.genre} &nbsp;|&nbsp; ${w.date}</div>
+      ${w.body.map(p => `<p class="reader-paragraph">${p.replace(/\n/g, '<br>')}</p>`).join('')}
+      <p style="font-family:'Noto Serif JP',serif;font-size:1rem;color:#111;letter-spacing:0.2em;margin-top:2.5rem;margin-bottom:0.5rem;">— つづく —</p>
+    `;
+  }
   // バーのいいね・コメント数を同期
   updateReaderBar(w);
 
