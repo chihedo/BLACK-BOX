@@ -1820,16 +1820,20 @@ function switchProfTab(tab) {
   if (!isInfo) renderManageList();
 }
 
-function openProfile(authorName) {
+async function openProfile(authorName) {
   currentProfileName = authorName;
-  const u = getUserByName(authorName);
+
+  // Supabaseからプロフィール取得
+  const { data: u } = await db.from('profiles').select('*').eq('name', authorName).single();
+  const profile = u || { name: authorName, bio: '', posts: 0, transfers: 0 };
+
   const isMe = currentUser && currentUser.name === authorName;
   const authorWorks = works.filter(w => w.author === authorName);
   const transferred = works.filter(w => w.author === authorName && w.status === 'sold').length;
   const revenue = works.filter(w => w.author === authorName && w.status === 'sold').reduce((s,w) => s+w.price, 0);
 
-  document.getElementById('prof-name').textContent = u.name;
-  document.getElementById('prof-bio').textContent = u.bio || 'プロフィール未設定';
+  document.getElementById('prof-name').textContent = profile.name;
+  document.getElementById('prof-bio').textContent = profile.bio || 'プロフィール未設定';
   document.getElementById('prof-posts').textContent = authorWorks.length;
   document.getElementById('prof-transfers').textContent = transferred;
   document.getElementById('prof-revenue').textContent = `¥${revenue.toLocaleString()}`;
