@@ -1739,8 +1739,8 @@ async function saveSettings() {
   if (error) { toast('更新失敗: ' + error.message); return; }
 
   if (nameChanged) {
-    await db.from('works').update({ author: name }).eq('author', oldName);
-    works.forEach(w => { if (w.author === oldName) w.author = name; });
+    await db.from('works').update({ author: name }).eq('author_id', currentUser.id);
+    works.forEach(w => { if (w.author_id === currentUser.id) w.author = name; });
   }
 
   currentUser.name = name;
@@ -2111,6 +2111,7 @@ async function submitWork() {
     format,
     genre:     document.getElementById('f-genre').value || '未設定',
     author:    currentUser.name,
+    author_id: currentUser.id,
     synopsis,
     price,
     date:      new Date().toISOString().slice(0, 10),
