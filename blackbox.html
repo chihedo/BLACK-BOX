@@ -1,0 +1,2367 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BLACK BOX</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Serif+JP:wght@300;400;700&family=IBM+Plex+Mono:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --black: #000000;
+  --white: #ffffff;
+  --red: #ff2020;
+  --dim: #111111;
+  --mid: #222222;
+  --border: #333333;
+  --muted: #555555;
+  --text-muted: #888888;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--black);
+  color: var(--white);
+  font-family: 'Noto Serif JP', serif;
+  min-height: 100vh;
+  cursor: crosshair;
+  overflow-x: hidden;
+}
+
+/* SCANLINES */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(255,255,255,0.012) 2px,
+    rgba(255,255,255,0.012) 4px
+  );
+  pointer-events: none;
+  z-index: 999;
+}
+
+/* CUSTOM CURSOR */
+* { cursor: crosshair; }
+button, a { cursor: crosshair; }
+
+/* HEADER */
+header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid var(--border);
+  background: rgba(0,0,0,0.95);
+  backdrop-filter: blur(10px);
+  height: 70px;
+}
+
+.logo-wrap {
+  display: flex;
+  align-items: center;
+  padding: 0 2rem;
+  border-right: 1px solid var(--border);
+  gap: 1rem;
+  text-decoration: none;
+}
+
+.logo-box {
+  width: 28px; height: 28px;
+  background: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-box-inner {
+  width: 10px; height: 10px;
+  background: var(--black);
+}
+
+.logo-text {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.4rem;
+  letter-spacing: 0.25em;
+  color: var(--white);
+}
+
+nav {
+  display: flex;
+  align-items: stretch;
+  margin-left: auto;
+}
+
+nav a {
+  display: flex;
+  align-items: center;
+  padding: 0 0.75rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  text-decoration: none;
+  border-left: 1px solid var(--border);
+  transition: all 0.2s;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+nav a:hover { color: var(--white); background: var(--dim); }
+
+nav a.active { color: var(--white); }
+
+.nav-post {
+  background: var(--white) !important;
+  color: var(--black) !important;
+  font-weight: 700 !important;
+  transition: all 0.2s !important;
+}
+
+.nav-post:hover { background: var(--red) !important; color: var(--white) !important; }
+
+.nav-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.nav-avatar:hover { background: var(--red); }
+.nav-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.nav-avatar svg { display: block; }
+
+.nav-avatar-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  padding: 0 0.75rem;
+  border-left: 1px solid var(--border);
+  cursor: crosshair;
+  transition: background 0.2s;
+  height: 100%;
+  min-width: 60px;
+}
+
+.nav-avatar-wrap:hover { background: var(--dim); }
+
+.nav-avatar-name {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.5rem;
+  letter-spacing: 0.1em;
+  color: #888;
+}
+
+/* HERO */
+.hero {
+  padding-top: 70px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-left: 4rem;
+  padding-right: 4rem;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #000000 0%, #0a0a0a 60%, #111111 100%);
+}
+
+.hero-bg-text {
+  position: absolute;
+  right: -2rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(12rem, 25vw, 22rem);
+  color: rgba(255,255,255,0.015);
+  letter-spacing: -0.05em;
+  line-height: 0.85;
+  pointer-events: none;
+  user-select: none;
+}
+
+.hero-eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.4em;
+  color: var(--red);
+  text-transform: uppercase;
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  animation: fade-in 0.8s ease both;
+}
+
+.hero-eyebrow::before {
+  content: '';
+  display: block;
+  width: 40px;
+  height: 1px;
+  background: var(--red);
+}
+
+.hero-h1 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(4rem, 10vw, 9rem);
+  line-height: 0.92;
+  letter-spacing: 0.02em;
+  margin-bottom: 3rem;
+  color: var(--white);
+  animation: fade-in 0.8s 0.1s ease both;
+  text-shadow: 0 2px 20px rgba(0,0,0,0.8);
+}
+
+.hero-h1 .line2 {
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--red);
+  display: block;
+}
+
+.hero-h1 .line3 {
+  color: var(--red);
+  display: block;
+}
+
+.hero-body {
+  max-width: 480px;
+  font-size: 0.95rem;
+  line-height: 2;
+  color: #dddddd;
+  font-weight: 300;
+  margin-bottom: 3rem;
+  animation: fade-in 0.8s 0.2s ease both;
+  text-shadow: 0 1px 8px rgba(0,0,0,0.9);
+}
+
+.hero-actions {
+  display: flex;
+  gap: 1px;
+  animation: fade-in 0.8s 0.3s ease both;
+}
+
+.btn-white {
+  background: var(--white);
+  color: var(--black);
+  border: none;
+  padding: 1rem 2.5rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  transition: all 0.2s;
+}
+
+.btn-white:hover { background: var(--red); color: var(--white); }
+
+.btn-outline {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  padding: 1rem 2.5rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  transition: all 0.2s;
+}
+
+.btn-outline:hover { border-color: var(--white); color: var(--white); }
+
+.hero-scroll {
+  display: none;
+}
+
+/* WORKS SECTION */
+.works-section {
+  padding: 4rem;
+  background: var(--black);
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.section-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2rem;
+  letter-spacing: 0.15em;
+  color: var(--white);
+}
+
+.filters {
+  display: flex;
+  gap: 0;
+}
+
+.filter-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: #888888;
+  padding: 0.5rem 1.2rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  transition: all 0.2s;
+  margin-left: -1px;
+}
+
+.filter-btn:hover, .filter-btn.active {
+  background: var(--black);
+  color: var(--white);
+  border-color: var(--white);
+  z-index: 1;
+}
+
+.works-list {
+  display: flex;
+  flex-direction: column;
+  max-height: 72vh;
+  overflow-y: auto;
+  overflow-x: visible;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.works-list::-webkit-scrollbar { width: 4px; }
+.works-list::-webkit-scrollbar-track { background: transparent; }
+.works-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.works-list::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+.work-card {
+  display: grid;
+  grid-template-columns: 200px 1fr 160px;
+  border: 1px solid var(--border);
+  margin-bottom: -1px;
+  transition: all 0.25s;
+  position: relative;
+  animation: fade-in 0.5s ease both;
+  cursor: pointer;
+}
+
+.work-card::before { display: none; }
+
+.work-card:hover { border-color: var(--red); z-index: 1; }
+
+.work-card > * { position: relative; z-index: 1; }
+
+.work-left {
+  padding: 2rem;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: #0a0a0a;
+  transition: background 0.25s, border-color 0.25s;
+}
+
+.work-card:hover .work-left {
+  background: var(--red);
+  border-right-color: var(--red);
+}
+
+.work-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 4rem;
+  line-height: 1;
+  color: var(--border);
+  transition: color 0.25s;
+}
+
+.work-card:hover .work-num { color: var(--white); }
+
+.work-format-badge {
+  display: inline-block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid;
+  transition: all 0.25s;
+}
+
+.work-format-badge.manga { border-color: var(--red); color: var(--red); }
+.work-format-badge.novel { border-color: #4488ff; color: #4488ff; }
+.work-card:hover .work-format-badge { border-color: var(--white); color: var(--white); }
+
+.work-mid {
+  padding: 2rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1rem;
+  background: #0d0d0d;
+  transition: background 0.25s;
+}
+
+.work-card:hover .work-mid { background: #1a0000; }
+
+.work-genre {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  color: #777777;
+  text-transform: uppercase;
+  transition: color 0.25s;
+}
+
+.work-card:hover .work-genre { color: #ff8888; }
+
+.work-title {
+  font-family: 'Noto Serif JP', serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: 0.02em;
+  color: var(--white);
+}
+
+.work-synopsis {
+  font-size: 0.8rem;
+  line-height: 1.9;
+  color: #aaaaaa;
+  font-weight: 300;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  transition: color 0.25s;
+}
+
+.work-card:hover .work-synopsis { color: #dddddd; }
+
+.work-bottom-row {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.work-meta {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.6rem;
+  color: #777777;
+  letter-spacing: 0.1em;
+  transition: color 0.25s;
+}
+
+.work-card:hover .work-meta { color: #ff8888; }
+
+.work-right {
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  gap: 1.5rem;
+  background: #0a0a0a;
+  transition: background 0.25s, border-color 0.25s;
+}
+
+.work-card:hover .work-right {
+  background: #1a0000;
+  border-left-color: var(--red);
+}
+
+.work-price {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+}
+
+.work-price-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2.2rem;
+  letter-spacing: 0.05em;
+  color: var(--white);
+  display: block;
+  line-height: 1;
+}
+
+.work-price-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.55rem;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  display: block;
+}
+
+.btn-card {
+  width: 100%;
+  background: transparent;
+  color: var(--white);
+  border: 1px solid var(--border);
+  padding: 0.7rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  transition: all 0.2s;
+}
+
+.btn-card:hover, .btn-card.primary {
+  background: var(--white);
+  color: var(--black);
+  border-color: var(--white);
+}
+
+.btn-card.primary:hover { background: var(--red); border-color: var(--red); color: var(--white); }
+
+/* MODAL */
+.overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.9);
+  z-index: 500;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  backdrop-filter: blur(4px);
+}
+
+.overlay.open { display: flex; }
+
+.modal {
+  background: var(--black);
+  border: 1px solid var(--border);
+  max-width: 640px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.modal-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.2rem 2rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--dim);
+}
+
+.modal-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.3em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.modal-close {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  width: 28px; height: 28px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.modal-close:hover { background: var(--red); border-color: var(--red); color: var(--white); }
+
+.modal-content { padding: 2rem; }
+
+.modal-title {
+  font-family: 'Noto Serif JP', serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  line-height: 1.3;
+}
+
+.modal-badges { display: flex; gap: 0.5rem; margin-bottom: 2rem; margin-top: 0.8rem; }
+
+.modal-synopsis-box {
+  background: var(--dim);
+  border-left: 2px solid var(--red);
+  padding: 1.5rem;
+  font-size: 0.85rem;
+  line-height: 2;
+  color: #cccccc;
+  font-weight: 300;
+  margin-bottom: 2rem;
+}
+
+.modal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid var(--border);
+  margin-bottom: 2rem;
+}
+
+.modal-grid-item {
+  padding: 1.2rem 1.5rem;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-grid-item:nth-child(2n) { border-right: none; }
+.modal-grid-item:nth-last-child(-n+2) { border-bottom: none; }
+
+.mgrid-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.25em;
+  color: var(--muted);
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 0.4rem;
+}
+
+.mgrid-val {
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: var(--white);
+}
+
+.modal-acquire-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid var(--border);
+  padding: 1.5rem 2rem;
+  background: var(--dim);
+  gap: 2rem;
+}
+
+.modal-price-big {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 3rem;
+  line-height: 1;
+  color: var(--white);
+}
+
+.modal-price-sub {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  margin-top: 0.3rem;
+}
+
+.btn-acquire-main {
+  background: var(--white);
+  color: var(--black);
+  border: none;
+  padding: 1rem 2rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.btn-acquire-main:hover { background: var(--red); color: var(--white); }
+
+/* FORM */
+.form-block { margin-bottom: 1.5rem; }
+
+.form-lbl {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: block;
+  margin-bottom: 0.6rem;
+}
+
+.form-ctrl {
+  width: 100%;
+  background: var(--dim);
+  border: 1px solid var(--border);
+  color: var(--white);
+  padding: 0.9rem 1rem;
+  font-family: 'Noto Serif JP', serif;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s;
+  -webkit-appearance: none;
+}
+
+.form-ctrl::placeholder { color: var(--muted); }
+.form-ctrl:focus { border-color: var(--white); }
+
+textarea.form-ctrl { resize: vertical; min-height: 130px; line-height: 1.8; }
+
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+.btn-submit {
+  width: 100%;
+  background: var(--white);
+  color: var(--black);
+  border: none;
+  padding: 1.1rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  transition: all 0.2s;
+  margin-top: 0.5rem;
+}
+
+.btn-submit:hover { background: var(--red); color: var(--white); }
+
+/* TOAST */
+.toast {
+  position: fixed;
+  bottom: 2.5rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--white);
+  color: var(--black);
+  padding: 1rem 2rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  z-index: 1000;
+  opacity: 0;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* EMPTY */
+.empty-state {
+  padding: 5rem 2rem;
+  text-align: center;
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.empty-state p {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+/* ANIMATIONS */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes blink-orange {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.new-badge {
+  display: inline-block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: #ff6600;
+  background: rgba(255,102,0,0.12);
+  border: 1px solid #ff6600;
+  padding: 0.1rem 0.4rem;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+  animation: blink-orange 1.2s ease-in-out infinite;
+}
+
+.ep-badge {
+  display: inline-block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.5rem;
+  letter-spacing: 0.1em;
+  color: #555;
+  border: 1px solid #333;
+  padding: 0.1rem 0.4rem;
+  margin-left: 0.4rem;
+  vertical-align: middle;
+}
+
+/* 概要ウィンドウ話数リスト */
+.ep-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-top: 1.5rem;
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+}
+
+.ep-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid #222;
+  background: #0a0a0a;
+  gap: 1rem;
+  transition: border-color 0.2s;
+}
+
+.ep-row:hover { border-color: #555; }
+
+.ep-row-info { flex: 1; min-width: 0; }
+
+.ep-row-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.55rem;
+  color: #555;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.2rem;
+}
+
+.ep-row-author {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.5rem;
+  color: #444;
+  letter-spacing: 0.05em;
+  margin-top: 0.15rem;
+}
+
+.ep-row-read {
+  background: none;
+  border: 1px solid #444;
+  color: #aaa;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.08em;
+  padding: 0.35rem 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.ep-row-read:hover { border-color: #fff; color: #fff; }
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--black); }
+::-webkit-scrollbar-thumb { background: var(--border); }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+.work-reactions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-left: auto;
+}
+
+.reaction-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+}
+
+.reaction-icon {
+  display: flex;
+  align-items: center;
+  line-height: 1;
+  color: #777777;
+  transition: transform 0.15s, color 0.2s;
+}
+
+.reaction-item:hover .reaction-icon { transform: scale(1.2); color: var(--white); }
+
+.reaction-count {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.6rem;
+  color: #777777;
+  transition: color 0.2s;
+}
+
+.reaction-item:hover .reaction-count { color: var(--white); }
+
+.author-link {
+  text-decoration: underline;
+  text-decoration-color: #444;
+  transition: color 0.2s;
+}
+.author-link:hover { color: var(--white) !important; text-decoration-color: var(--white); }
+
+.prof-work-item {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid #222;
+  background: #0a0a0a;
+  transition: border-color 0.2s;
+  cursor: pointer;
+}
+.prof-work-item:hover { border-color: var(--white); }
+.prof-work-title {
+  font-size: 0.85rem;
+  flex: 1;
+  color: var(--white);
+}
+.prof-work-status {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  color: #4488ff;
+}
+.prof-work-status.sold { color: #555; }
+
+/* READER PAGE */
+.reader-page-wrap {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: #f9f6f1;
+  z-index: 200;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.reader-page-wrap.open { display: flex; }
+
+.reader-page-header {
+  position: sticky;
+  top: 0;
+  background: #f9f6f1;
+  border-bottom: 1px solid #ddd;
+  padding: 0.8rem 2rem;
+  display: flex;
+  align-items: center;
+  z-index: 10;
+}
+
+.reader-page-title {
+  font-family: 'Noto Serif JP', serif;
+  font-size: 0.9rem;
+  color: #333;
+  letter-spacing: 0.05em;
+}
+
+.reader-back-btn {
+  background: none;
+  border: 1px solid #ccc;
+  color: #555;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.15em;
+  padding: 0.4rem 1rem;
+  transition: all 0.2s;
+}
+
+.reader-back-btn:hover { border-color: #333; color: #333; }
+
+.reader-content {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 4rem 2rem 8rem;
+  width: 100%;
+}
+
+.reader-content h1 {
+  font-family: 'Noto Serif JP', serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #111;
+  margin-bottom: 0.5rem;
+  line-height: 1.4;
+}
+
+.reader-content .reader-meta {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.65rem;
+  color: #999;
+  letter-spacing: 0.1em;
+  margin-bottom: 3rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #ddd;
+}
+
+.reader-paragraph {
+  font-family: 'Noto Serif JP', serif;
+  font-size: 1rem;
+  line-height: 2.2;
+  color: #222;
+  margin-bottom: 1.8rem;
+}
+
+/* READER */
+
+.nav-user-wrap {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+}
+
+.nav-dropdown {
+  display: none;
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: var(--black);
+  border: 1px solid var(--border);
+  min-width: 160px;
+  z-index: 200;
+  flex-direction: column;
+}
+
+.nav-dropdown.open { display: flex; }
+
+.nav-dropdown button {
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  color: #aaa;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  padding: 0.9rem 1.2rem;
+  text-align: left;
+  transition: all 0.2s;
+  cursor: crosshair;
+}
+
+.nav-dropdown button:last-child { border-bottom: none; }
+.nav-dropdown button:hover { background: var(--dim); color: var(--white); }
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 2rem 4rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.footer-logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.2rem;
+  letter-spacing: 0.3em;
+  color: var(--muted);
+}
+
+.footer-note {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--border);
+  letter-spacing: 0.1em;
+}
+
+@media (max-width: 768px) {
+  .hero { padding: 4rem 1.5rem; padding-top: calc(56px + 2rem); }
+  .hero-bg-text { display: none; }
+  .works-section { padding: 2rem 1.5rem; }
+  .work-card { grid-template-columns: 1fr; }
+  .work-left { flex-direction: row; align-items: center; padding: 1rem 1.5rem; border-right: none; border-bottom: 1px solid var(--border); }
+  .work-right { border-left: none; border-top: 1px solid var(--border); flex-direction: row; padding: 1rem 1.5rem; }
+  .stats { grid-template-columns: 1fr 1fr; }
+  .modal-acquire-bar { flex-direction: column; align-items: flex-start; }
+  .form-row { grid-template-columns: 1fr; }
+  footer { padding: 1.5rem; flex-direction: column; gap: 0.5rem; text-align: center; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <a class="logo-wrap" href="#">
+    <div class="logo-box"><div class="logo-box-inner"></div></div>
+    <span class="logo-text">BLACK BOX</span>
+  </a>
+  <nav>
+    <a href="#works" class="active" onclick="setFilter('all'); return false;">すべて</a>
+    <a href="#" onclick="setFilter('manga'); return false;">漫画</a>
+    <a href="#" onclick="setFilter('novel'); return false;">小説</a>
+    <div class="nav-user-wrap" id="nav-user-wrap">
+      <a href="#" id="nav-auth-btn" class="nav-post" onclick="handleAuthClick(event)">ログイン</a>
+      <div class="nav-dropdown" id="nav-dropdown">
+        <button onclick="goToMyProfile()">マイプロフィール</button>
+        <button onclick="openSettings()">アカウント設定</button>
+        <button onclick="doLogout()">ログアウト</button>
+      </div>
+    </div>
+  </nav>
+</header>
+
+<!-- HERO -->
+<section class="hero" id="top">
+  <div class="hero-bg-text">BB</div>
+  <div class="hero-eyebrow">未完作品の完全譲渡市場</div>
+  <h1 class="hero-h1">
+    描いた。
+    <span class="line2">続きは</span>
+    <span class="line3">あなたへ。</span>
+  </h1>
+  <p class="hero-body">
+    0→1を作れるが続けられない作家と、1→100を描けるが始められない作家をつなぐ。
+    作品の権利を完全譲渡し、次のページを誰かに委ねる場所。
+  </p>
+  <div class="hero-actions">
+    <a href="#works" class="btn-white">
+      <span>作品を見る</span>
+      <span>↓</span>
+    </a>
+    <a href="#" class="btn-outline" onclick="openPost(); return false;">投稿する</a>
+  </div>
+  <div class="hero-scroll"></div>
+</section>
+
+<!-- WORKS -->
+<section class="works-section" id="works">
+  <div class="section-head">
+    <h2 class="section-title">掲載中の作品</h2>
+  </div>
+  <div class="works-list" id="works-list"></div>
+</section>
+
+<footer>
+  <span class="footer-logo">BLACK BOX</span>
+  <span class="footer-note">試作版 v0.1 — 未完作品の完全譲渡市場</span>
+</footer>
+
+<!-- DETAIL MODAL -->
+<div class="overlay" id="detail-overlay">
+  <div class="modal">
+    <div class="modal-top-bar">
+      <span class="modal-label">作品詳細</span>
+      <button class="modal-close" onclick="closeOverlay('detail-overlay')">✕</button>
+    </div>
+    <div class="modal-content">
+      <div class="modal-badges" id="d-badges"></div>
+      <div class="modal-title" id="d-title"></div>
+      <div class="modal-synopsis-box" id="d-synopsis"></div>
+      <div class="modal-grid">
+        <div class="modal-grid-item">
+          <span class="mgrid-label">ジャンル</span>
+          <span class="mgrid-val" id="d-genre"></span>
+        </div>
+        <div class="modal-grid-item">
+          <span class="mgrid-label">作者</span>
+          <span class="mgrid-val" id="d-author"></span>
+        </div>
+        <div class="modal-grid-item">
+          <span class="mgrid-label">形式</span>
+          <span class="mgrid-val" id="d-format"></span>
+        </div>
+        <div class="modal-grid-item">
+          <span class="mgrid-label">投稿日</span>
+          <span class="mgrid-val" id="d-date"></span>
+        </div>
+      </div>
+      <div class="modal-acquire-bar">
+        <div>
+          <div class="modal-price-big" id="d-price"></div>
+          <div class="modal-price-sub">完全譲渡 — 続編・商用利用・再販すべて可</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:0.5rem;align-items:flex-end;">
+          <button class="btn-acquire-main" id="d-read-btn" style="display:none;background:#222;color:#fff;border:1px solid #444;" onclick="openReaderFromDetail()">本文を読む →</button>
+          <button class="btn-acquire-main" id="d-acquire-btn">権利を取得する →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- POST MODAL -->
+<div class="overlay" id="post-overlay">
+  <div class="modal">
+    <div class="modal-top-bar">
+      <span class="modal-label">作品を投稿する</span>
+      <button class="modal-close" onclick="closeOverlay('post-overlay')">✕</button>
+    </div>
+    <div class="modal-content">
+      <div class="form-block">
+        <label class="form-lbl">タイトル *</label>
+        <input type="text" class="form-ctrl" id="f-title" placeholder="作品タイトル">
+      </div>
+      <div class="form-row">
+        <div class="form-block">
+          <label class="form-lbl">形式 *</label>
+          <select class="form-ctrl" id="f-format">
+            <option value="manga">漫画</option>
+            <option value="novel">小説</option>
+          </select>
+        </div>
+        <div class="form-block">
+          <label class="form-lbl">ジャンル</label>
+          <input type="text" class="form-ctrl" id="f-genre" placeholder="SF、ホラー、恋愛…">
+        </div>
+      </div>
+      <div class="form-block">
+        <label class="form-lbl">あらすじ・第1話の内容 *</label>
+        <textarea class="form-ctrl" id="f-synopsis" placeholder="どんな話か、どこで止まっているかを書いてください"></textarea>
+      </div>
+      <div class="form-block" id="f-series-block">
+        <label class="form-lbl">シリーズに追加（続編の場合）</label>
+        <select class="form-ctrl" id="f-series">
+          <option value="">新規作品として投稿</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-block">
+          <label class="form-lbl">ペンネーム</label>
+          <input type="text" class="form-ctrl" id="f-author" placeholder="匿名可">
+        </div>
+        <div class="form-block">
+          <label class="form-lbl">譲渡価格（¥）*</label>
+          <input type="number" class="form-ctrl" id="f-price" placeholder="例: 500" min="0">
+        </div>
+      </div>
+      <div style="display:flex;gap:0.75rem;margin-top:0.5rem;">
+        <button class="btn-submit" onclick="submitWork()" style="flex:1;">投稿する →</button>
+        <button onclick="openPreview('post')" style="background:none;border:1px solid var(--border);color:#aaa;padding:0.8rem 1.5rem;font-family:'IBM Plex Mono',monospace;font-size:0.7rem;letter-spacing:0.15em;cursor:pointer;transition:all 0.2s;white-space:nowrap;" onmouseover="this.style.borderColor='#fff';this.style.color='#fff'" onmouseout="this.style.borderColor='var(--border)';this.style.color='#aaa'">プレビュー</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="overlay" id="settings-overlay">
+  <div class="modal">
+    <div class="modal-top-bar">
+      <span class="modal-label">アカウント設定</span>
+      <button class="modal-close" onclick="closeOverlay('settings-overlay')">✕</button>
+    </div>
+    <div class="modal-content">
+      <div class="form-block">
+        <label class="form-lbl">ペンネーム</label>
+        <input type="text" class="form-ctrl" id="s-name" placeholder="名前">
+      </div>
+      <div class="form-block">
+        <label class="form-lbl">自己紹介</label>
+        <textarea class="form-ctrl" id="s-bio" placeholder="一言プロフィール" style="height:100px;"></textarea>
+      </div>
+      <button class="btn-submit" onclick="saveSettings()">保存する →</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOGIN MODAL -->
+<div class="overlay" id="login-overlay">
+  <div class="modal">
+    <div class="modal-top-bar">
+      <span class="modal-label">ログイン</span>
+      <button class="modal-close" onclick="closeOverlay('login-overlay')">✕</button>
+    </div>
+    <div class="modal-content">
+      <p style="font-size:0.8rem;color:#888;font-family:'IBM Plex Mono',monospace;letter-spacing:0.05em;margin-bottom:1.5rem;line-height:1.8;">これはプロトタイプです。ユーザーを選んでログインしてください。</p>
+      <div style="display:flex;flex-direction:column;gap:1px;">
+        <button class="btn-submit" style="margin:0;" onclick="doLogin('朝日')">朝日 としてログイン</button>
+        <button class="btn-submit" style="margin:0;background:#111;color:#fff;border:1px solid #333;" onclick="doLogin('ミヤモト')">ミヤモト としてログイン</button>
+        <button class="btn-submit" style="margin:0;background:#111;color:#fff;border:1px solid #333;" onclick="doLogin('カワハラ')">カワハラ としてログイン</button>
+        <button class="btn-submit" style="margin:0;background:#111;color:#fff;border:1px solid #333;" onclick="doLogin('タナカ K')">タナカ K としてログイン</button>
+        <button class="btn-submit" style="margin:0;background:#111;color:#fff;border:1px solid #333;" onclick="doLogin('あなた')">新規ユーザーとしてログイン</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PROFILE MODAL -->
+<div class="overlay" id="profile-overlay">
+  <div class="modal" style="max-width:680px;">
+    <div class="modal-top-bar">
+      <span class="modal-label" id="prof-modal-label">プロフィール</span>
+      <button class="modal-close" onclick="closeOverlay('profile-overlay')">✕</button>
+    </div>
+
+    <!-- タブ（本人のみ管理タブ表示） -->
+    <div id="prof-tabs" style="display:none;border-bottom:1px solid var(--border);display:flex;">
+      <button onclick="switchProfTab('info')" id="prof-tab-info" style="flex:1;padding:0.8rem;background:#111;border:none;border-bottom:2px solid var(--white);color:var(--white);font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.15em;cursor:pointer;">プロフィール</button>
+      <button onclick="switchProfTab('manage')" id="prof-tab-manage" style="flex:1;padding:0.8rem;background:#111;border:none;border-bottom:2px solid transparent;color:#555;font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.15em;cursor:pointer;">作品管理</button>
+    </div>
+
+    <!-- プロフィールタブ -->
+    <div id="prof-tab-info-content" class="modal-content">
+      <div style="margin-bottom:2rem;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:0.1em;margin-bottom:0.5rem;" id="prof-name"></div>
+        <div style="font-size:0.85rem;color:#aaa;line-height:1.8;font-weight:300;" id="prof-bio"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;border:1px solid #333;margin-bottom:2rem;">
+        <div style="padding:1.2rem 1.5rem;border-right:1px solid #333;">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#555;letter-spacing:0.2em;display:block;margin-bottom:0.4rem;">投稿数</span>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:2rem;display:block;" id="prof-posts">0</span>
+        </div>
+        <div style="padding:1.2rem 1.5rem;border-right:1px solid #333;">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#555;letter-spacing:0.2em;display:block;margin-bottom:0.4rem;">譲渡実績</span>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:2rem;display:block;" id="prof-transfers">0</span>
+        </div>
+        <div style="padding:1.2rem 1.5rem;">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#555;letter-spacing:0.2em;display:block;margin-bottom:0.4rem;">売上合計</span>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:2rem;display:block;" id="prof-revenue">¥0</span>
+        </div>
+      </div>
+      <div style="margin-bottom:1.5rem;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.6rem;color:#555;letter-spacing:0.2em;margin-bottom:1rem;">投稿作品</div>
+        <div id="prof-works" style="display:flex;flex-direction:column;gap:1px;"></div>
+      </div>
+      <button class="btn-submit" id="prof-logout-btn" style="display:none;background:#333;color:#fff;" onclick="doLogout()">ログアウト</button>
+    </div>
+
+    <!-- 作品管理タブ -->
+    <div id="prof-tab-manage-content" class="modal-content" style="display:none;">
+      <div id="prof-manage-list" style="display:flex;flex-direction:column;gap:1px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 作品テキスト編集モーダル（小説） -->
+<div class="overlay" id="text-edit-overlay">
+  <div class="modal" style="max-width:760px;">
+    <div class="modal-top-bar">
+      <span class="modal-label">本文を編集</span>
+      <button class="modal-close" onclick="closeOverlay('text-edit-overlay')">✕</button>
+    </div>
+    <div class="modal-content">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#555;letter-spacing:0.15em;margin-bottom:0.5rem;">本文（段落ごとに空行で区切ってください）</div>
+      <textarea id="text-edit-input" style="width:100%;background:#0d0d0d;border:1px solid var(--border);color:#ddd;padding:1.2rem;font-size:0.85rem;font-family:'Noto Serif JP',serif;line-height:2;resize:vertical;min-height:300px;outline:none;"></textarea>
+      <div style="margin-top:1rem;display:flex;gap:0.75rem;">
+        <button onclick="saveTextEdit()" style="background:var(--white);color:var(--black);border:none;padding:0.6rem 1.5rem;font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.1em;cursor:pointer;">保存する →</button>
+        <button onclick="openPreview('text')" style="background:none;border:1px solid var(--border);color:#aaa;padding:0.6rem 1.2rem;font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.1em;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.borderColor='#fff';this.style.color='#fff'" onmouseout="this.style.borderColor='var(--border)';this.style.color='#aaa'">プレビュー</button>
+        <button onclick="closeOverlay('text-edit-overlay')" style="background:none;border:1px solid var(--border);color:#555;padding:0.6rem 1.2rem;font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.1em;cursor:pointer;">キャンセル</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- OVERVIEW MODAL（概要ウィンドウ） -->
+<div class="overlay" id="overview-overlay">
+  <div class="modal" style="max-width:680px;">
+    <div class="modal-top-bar">
+      <span class="modal-label" id="ov-format-label">漫画</span>
+      <div style="display:flex;align-items:center;gap:0.75rem;">
+        <button id="ov-edit-btn" onclick="openEditOverlay()" style="display:none;background:none;border:1px solid var(--border);color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.1em;padding:0.3rem 0.8rem;transition:all 0.2s;">✎ 編集</button>
+        <button class="modal-close" onclick="closeOverlay('overview-overlay')">✕</button>
+      </div>
+    </div>
+    <div class="modal-content" style="padding:1.8rem 2rem;">
+
+      <!-- ジャンル・タイトル -->
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:var(--muted);letter-spacing:0.25em;margin-bottom:0.5rem;" id="ov-genre"></div>
+      <div style="font-family:'Noto Serif JP',serif;font-size:1.6rem;font-weight:700;line-height:1.3;margin-bottom:1.2rem;" id="ov-title"></div>
+
+      <!-- 作者・日付 -->
+      <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.8rem;">
+        <span style="display:flex;align-items:center;gap:0.4rem;font-size:0.8rem;color:#aaa;">
+          <span style="width:20px;height:20px;border-radius:50%;background:#222;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#777" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          </span>
+          <span id="ov-author" class="author-link" onclick="closeOverlay('overview-overlay'); openProfile(document.getElementById('ov-author').dataset.name)" style="cursor:pointer;"></span>
+        </span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:0.6rem;color:#555;" id="ov-date"></span>
+      </div>
+
+      <!-- あらすじ -->
+      <div style="background:#111;border-left:2px solid var(--red);padding:1.2rem 1.5rem;font-size:0.85rem;line-height:2;color:#ccc;font-weight:300;margin-bottom:2rem;" id="ov-synopsis"></div>
+
+      <!-- 価格 -->
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border);">
+        <div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:0.5rem;color:#555;letter-spacing:0.2em;margin-bottom:0.3rem;">完全譲渡価格</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:2.2rem;line-height:1;" id="ov-price"></div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#555;margin-top:0.2rem;">続編・商用利用・再販すべて可</div>
+        </div>
+        <button id="ov-read-btn" onclick="readFromOverview()" style="background:var(--white);color:var(--black);border:none;padding:0.9rem 2rem;font-family:'IBM Plex Mono',monospace;font-size:0.7rem;letter-spacing:0.15em;cursor:pointer;transition:opacity 0.2s;white-space:nowrap;">作品を読む →</button>
+      </div>
+
+      <!-- いいね・コメント数 -->
+      <div style="display:flex;align-items:center;gap:1.5rem;margin-bottom:2rem;">
+        <button id="ov-like-btn" onclick="toggleLikeFromOverview()" style="display:flex;align-items:center;gap:0.5rem;background:none;border:1px solid var(--border);padding:0.5rem 1rem;cursor:pointer;transition:all 0.2s;font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.1em;color:#aaa;">
+          <span id="ov-like-icon">♡</span>
+          <span id="ov-like-count">0</span>
+        </button>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:#555;letter-spacing:0.05em;">
+          コメント <span id="ov-comment-count">0</span>
+        </span>
+      </div>
+
+      <!-- コメント一覧 -->
+      <div id="ov-comments-list" style="display:flex;flex-direction:column;gap:1rem;margin-bottom:1.5rem;"></div>
+
+      <!-- コメント入力 -->
+      <div id="ov-comment-form" style="display:none;">
+        <textarea id="ov-comment-input" placeholder="コメントを書く..." style="width:100%;background:#111;border:1px solid var(--border);color:#ddd;padding:1rem;font-size:0.85rem;font-family:inherit;line-height:1.8;resize:vertical;min-height:80px;outline:none;"></textarea>
+        <button onclick="submitOverviewComment()" style="margin-top:0.5rem;background:var(--white);color:var(--black);border:none;padding:0.5rem 1.3rem;font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.1em;cursor:pointer;">投稿する →</button>
+      </div>
+      <div id="ov-comment-login" style="display:none;font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:#555;">
+        コメントするには<a href="#" onclick="closeOverlay('overview-overlay'); openLogin();" style="color:#aaa;text-decoration:underline;">ログイン</a>が必要です
+      </div>
+
+      <!-- 話数リスト（シリーズのみ） -->
+      <div id="ov-ep-list" class="ep-list" style="display:none;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- READER FULL PAGE（小説読書ページ） -->
+<div class="reader-page-wrap" id="reader-page">
+  <div class="reader-page-header" style="justify-content:space-between;">
+    <button class="reader-back-btn" onclick="closeReader()">← 概要に戻る</button>
+    <span id="r-page-title" style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:#999;letter-spacing:0.1em;"></span>
+  </div>
+  <div class="reader-content" id="r-body"></div>
+  <!-- スクロール最下部：アクションバー -->
+  <div id="r-sequel-bar" style="display:none;position:sticky;bottom:0;background:#f9f6f1;border-top:2px solid #111;padding:1.2rem 1.5rem;flex-wrap:wrap;gap:1rem;align-items:center;justify-content:space-between;">
+    <div>
+      <div style="font-family:'Noto Serif JP',serif;font-size:0.9rem;color:#111;">この作品の続きを書きませんか？</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+      <button id="r-like-btn" onclick="toggleLikeFromReader()" style="display:flex;align-items:center;gap:0.4rem;background:none;border:1px solid #ccc;padding:0.5rem 1rem;font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.1em;color:#555;cursor:pointer;transition:all 0.2s;">
+        <span id="r-like-icon">♡</span><span id="r-like-count">0</span>
+      </button>
+      <button onclick="openCommentFromReader()" style="display:flex;align-items:center;gap:0.4rem;background:none;border:1px solid #ccc;padding:0.5rem 1rem;font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.1em;color:#555;cursor:pointer;transition:all 0.2s;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+        <span id="r-comment-count">0</span>
+      </button>
+      <button onclick="acquireAndWrite()" style="background:#111;color:#fff;border:none;padding:0.6rem 1.3rem;font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.12em;cursor:pointer;white-space:nowrap;">続きを書く →</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT OVERLAY（投稿者のみ） -->
+<div class="overlay" id="edit-overlay">
+  <div class="modal">
+    <div class="modal-top-bar">
+      <span class="modal-label">作品を編集する</span>
+      <button class="modal-close" onclick="closeOverlay('edit-overlay')">✕</button>
+    </div>
+    <div class="modal-content">
+      <div class="form-block">
+        <label class="form-lbl">タイトル</label>
+        <input type="text" class="form-ctrl" id="e-title">
+      </div>
+      <div class="form-row">
+        <div class="form-block">
+          <label class="form-lbl">形式</label>
+          <select class="form-ctrl" id="e-format">
+            <option value="manga">漫画</option>
+            <option value="novel">小説</option>
+          </select>
+        </div>
+        <div class="form-block">
+          <label class="form-lbl">ジャンル</label>
+          <input type="text" class="form-ctrl" id="e-genre">
+        </div>
+      </div>
+      <div class="form-block">
+        <label class="form-lbl">あらすじ・紹介文</label>
+        <textarea class="form-ctrl" id="e-synopsis" style="min-height:120px;"></textarea>
+      </div>
+      <div class="form-block">
+        <label class="form-lbl">譲渡価格（¥）</label>
+        <input type="number" class="form-ctrl" id="e-price" min="0">
+      </div>
+      <div style="display:flex;gap:0.75rem;margin-top:0.5rem;">
+        <button class="btn-submit" onclick="saveEdit()" style="flex:1;">保存する →</button>
+        <button onclick="openPreview('edit')" style="background:none;border:1px solid var(--border);color:#aaa;padding:0.8rem 1.5rem;font-family:'IBM Plex Mono',monospace;font-size:0.7rem;letter-spacing:0.15em;cursor:pointer;transition:all 0.2s;white-space:nowrap;" onmouseover="this.style.borderColor='#fff';this.style.color='#fff'" onmouseout="this.style.borderColor='var(--border)';this.style.color='#aaa'">プレビュー</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PREVIEW PAGE（読書ページと同じ表示） -->
+<div class="reader-page-wrap" id="preview-page" style="z-index:600;">
+  <div class="reader-page-header" style="justify-content:space-between;">
+    <button class="reader-back-btn" onclick="document.getElementById('preview-page').classList.remove('open');document.body.style.overflow='';">← 編集に戻る</button>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:0.6rem;color:#999;letter-spacing:0.15em;">PREVIEW</span>
+  </div>
+  <div class="reader-content" id="pv-body"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// --- AUTH ---
+let currentUser = null;
+
+const users = [
+  { id: 'u0', name: '朝日',    bio: 'BLACK BOX創始者', posts: 1, transfers: 0 },
+  { id: 'u1', name: 'ミヤモト', bio: 'SF・実験的な世界観が得意。1話は描けるが続きが思い浮かばないタイプ。', posts: 3, transfers: 2 },
+  { id: 'u2', name: '匿名',    bio: '', posts: 1, transfers: 1 },
+  { id: 'u3', name: 'カワハラ', bio: '日常系・不条理コメディ専門。絵は描けるがプロット力がない。', posts: 2, transfers: 1 },
+  { id: 'u4', name: 'タナカ K', bio: 'コメディ法廷もの。テンポ重視で書いている。', posts: 4, transfers: 3 },
+  { id: 'demo', name: 'あなた', bio: 'プロフィール未設定', posts: 0, transfers: 0 },
+];
+
+function getUserByName(name) {
+  return users.find(u => u.name === name) || { id: null, name, bio: '', posts: 0, transfers: 0 };
+}
+
+// --- WORKS ---
+let works = [
+  { id: 1, title: '砂漠の底で魚が泳ぐ',         format: 'manga',  genre: 'SF / 実験的',    author: 'ミヤモト', synopsis: '地球の水が全て砂に変わった世界。元漁師の少女リョウは砂の中を泳ぐ謎の生物を発見する。第1話で彼女が生物を追って砂漠の深部へ潜っていくシーンで終わっている。続きのビジョンが全くないため譲渡。世界観だけは自信がある。', price: 0,    date: '2026-01-12', status: 'available', likes: 12, comments: [], liked: false, body: null, seriesId: null, episode: 1 },
+  { id: 2, title: '月曜の朝、彼女は死んでいた',   format: 'novel',  genre: 'ミステリー',      author: '匿名',     synopsis: '主人公の隣人が毎週月曜日の朝に死んでいる。でも火曜日には生き返っている。誰も気にしていない。第1話で主人公だけがこの異常に気づくところまで書いた。なぜそうなっているのかは自分でも決めていない。', price: 0,    date: '2026-01-28', status: 'available', likes: 8,  comments: [], liked: false, body: null, seriesId: null, episode: 1 },
+  { id: 3, title: 'おじいちゃんの右手だけが若い', format: 'manga',  genre: '日常 / 不条理',  author: 'カワハラ', synopsis: '83歳の祖父の右手だけが20代の手をしている。家族は誰も触れない話題。孫の視点で、その右手の秘密に迫ろうとする話。1話は孫が初めて祖父の右手に触れる場面で終わっている。ゆっくり丁寧に書ける人に渡したい。', price: 500,  date: '2026-02-03', status: 'available', likes: 24, comments: [], liked: false, body: null, seriesId: null, episode: 1 },
+  { id: 4, title: '嘘しかつけない弁護士',         format: 'novel',  genre: 'コメディ / 法廷', author: 'タナカ K', synopsis: '呪いにより物理的に嘘しかつけなくなった敏腕弁護士が、それでも無実の依頼人を救おうとする話。1話で呪いの発覚と最初の法廷シーンまで書いた。ギャグと感動を両立できる人に。', price: 1000, date: '2026-02-10', status: 'available', likes: 5,  comments: [], liked: false, body: null, seriesId: null, episode: 1 },
+  { id: 6, title: '老害バスターズ',                format: 'manga',  genre: 'アクション / 社会', author: '朝日', synopsis: '2050年、超高齢化社会の日本。暴走プリウスが街を蹂躙する中、バイト中の青年・一条若葉は理不尽な老害たちへの殺意を覚える。そこに悪魔・メフィストが現れ、老害を狩る力と引き換えに契約を迫る。第1話（全31ページ）完成。続きのプロットが思い浮かばないため譲渡。', price: 0, date: '2026-02-21', status: 'available', likes: 0, comments: [], liked: false, body: null, mangaUrl: 'roigai-ch1.html', seriesId: 'series-roigai', episode: 1 },
+  {
+    id: 5,
+    title: 'ADHD榊原',
+    format: 'novel',
+    genre: '青春 / コメディ',
+    author: '朝日',
+    synopsis: 'ADHDの高校生・榊原棺が入学式の新入生代表挨拶で盛大にやらかす。続きのビジョンはあるが筆が進まないため譲渡。キャラクターの声だけは自信がある。',
+    price: 0,
+    date: '2026-02-21',
+    status: 'available',
+    likes: 0,
+    comments: [],
+    liked: false,
+    seriesId: 'series-adhd',
+    episode: 1,
+    body: [
+      `「ぶち殺してえ...」\n\n高校生の榊原棺（さかきばら ひつぎ）はスーツ姿の魑魅魍魎が跋扈する東京のど真ん中で、深い怒りとともにそれを口にした。`,
+      `そのきっかけはたわいもないもので、言うなれば、こちら側のどちらからも封が切れなかったときや、改札を通ろうとしたらSuicaのチャージ金が不足していて入れなかったときのような、いわゆる、見通しの甘さがきっかけなのだが、\n\n「俺は完全に舐めてた、いや何を舐めてたって、世の中はもっと話の通じる奴が意識的に生活していると思っていた。」\n\n榊原の激しめの独り言が、虚しく都会の雑踏に掻き消されていく。`,
+      `というのも、榊原は、今朝の入学式で早くも高校デビューに失敗していた。\n\n中学時代を泥臭く野球部で過ごした榊原は、その反動から、高校生活は、京都アニメーション制作のアニメのような煌びやかなスクールライフを堪能する予定だった。\n\nしかしながら、入学式の新入生代表挨拶で盛大にやらかす羽目になる。`,
+      `ー 4月8日　AM 10:20　私立不屈野高校入学式 ー\n\n「続いて新入生代表挨拶、1年7組 榊原棺」\n\n3年実行委員の奈良野の呼び掛けに、榊原は威勢よく立ち上がる。\n\n「はい！」\n\nガチャン！\n\n座っていたパイプ椅子が起立の反動で倒れる。`,
+      `事前に担任から手渡されたカンペを持ち、体育館の壇上へと上がると、マイクの位置を調整し、躊躇いなく一言めを放った。\n\n「俺は入学式とかクソだと思ってる！なぜなら、入学ってのは競争の始まりを意味するからだ！クラス内での人気、成績の比較、運動能力の測定、お前らとこれからそれらを比べ合わなければならないと考えるけで息が詰まりそうだ！だから俺は自ら立候補した！最初にリードするために！この新入生代表挨拶に！」`,
+      `赤塚不二夫への弔辞を読んだタモさんを彷彿させるかの如く、榊原はカンペをフル無視してだいぶ長めの一言を息継ぎせず吐き切った。\n\n正確にはタモさんはカンペを無視したわけではないのだが。\n\n「俺は中学時代野球部でそこそこ実力者だったっていうのもあるし、いやまあ、地域の有望な奴らが全員シニアリーグに入ったからっていう事情を差し引いても、俺は中学時代そこそこ実力者だった！」\n\n2回言った。`,
+      `全生徒と教職員がそう思ったであろうタイミングで榊原は一旦息を整え、再びマイクに近づいた。\n\n「ただ、俺の中学生活は空虚だった！幼馴染に勧められてなんとなく野球部に入ったんだけど、その幼馴染は途中で彼女できて部活来なくなったし、なんなら疎遠にもなった！」\n\n息を整えて尚見切り発車な自分語りを続ける榊原を、固唾を飲み見守る生徒と教職員たち。`,
+      `そのやばい空気をいち早く察した榊原は、喋りで時間を繋ぎつつ、急いで話の着地点を探した。\n\n「え〜だから...つまり...高校生活ってのはそういう人間関係とかから解放されたくて、ん〜...あの...部活とかもホントどうでもよくて、マジで勧誘とかもあれ昇降口出たらやってるけど、マジ鬱陶しくない？」`,
+      `傷つけなくていい人たちを思いがけず傷つけてしまったことに動揺を隠しきれない榊原は、最終的に何が話したかったのかわからなくなり、また同時に、素直に担任から手渡されたカンペを丸読みしとけばよかったことを悔い、\n\n「だから、なんか、空き教室とかで放課後お茶とかする部活やりたいので、興味ある人はぜひ...ハハっ」\n\nと無理矢理新入生代表挨拶を胴体着陸させた。`,
+      `榊原が壇上から降りるや否や、実行委員の奈良野は、今見たことを無かったことにするかのように進行を続け、その間、榊原はさっき倒したパイプ椅子を元に戻し、自分の席についた。\n\nーーーーーーーーーーーーーーーーーーーーーーー\n\n「あーーーー！！！！」\n\n入学式の鮮明なフラッシュバックをかき消すように声を張り上げる榊原。近くを歩く熟年OLにビクッとされながらも、榊原は気にせず脳内1人反省会を始めた。`,
+      `「なんであんなこと言っちゃったかな〜...中学時代の話とか別に言わなくて良かったのに...いやまあ...話を聞いてもらうためにはまず自分を知ってもらわなきゃだし、あと昨日の夜トランプ大統領の演説見ちゃったってのも関係してて...」\n\n誰に向けての言い訳なのかもわからない自分の独り言にさらに嫌気がさすと、榊原は、自分の反芻思考を身体で表現するかのように、東京の街を目的なく歩き続けた。`,
+    ]
+  },
+  {
+    id: 7,
+    title: 'ADHD榊原',
+    format: 'novel',
+    genre: '青春 / コメディ',
+    author: 'ミヤモト',
+    synopsis: '翌日、榊原は部活の勧誘期間に怯えながら登校する。昨日の挨拶のせいで一部の生徒から「お茶部」への入部希望が殺到していた。',
+    price: 0,
+    date: '2026-02-22',
+    status: 'available',
+    likes: 2,
+    comments: [],
+    liked: false,
+    seriesId: 'series-adhd',
+    episode: 2,
+    body: [
+      `翌朝、榊原棺は布団の中で昨日のことを思い出し、三回ほど叫んだ。\n\n隣の部屋から母親の「うるさい」という声が飛んできたが、榊原は気にしなかった。気にする精神的余裕がなかった。`,
+      `「お茶部...俺は何を言ったんだ...」\n\n自分が放った最後の一言が、頭の中で何度もリプレイされる。放課後にお茶をする部活。そんなものは存在しない。当然だ、昨日の今日で作れるわけがない。\n\nしかし問題は、昨日の挨拶を聞いていた全校生徒のうち、何人かが本気にしている可能性があることだった。`,
+      `案の定だった。\n\n昇降口で靴を履き替えようとした榊原の肩を、後ろから誰かが叩いた。\n\n「あの、昨日の挨拶した人ですよね？お茶部、入りたいんですけど」\n\n振り返ると、眼鏡をかけた小柄な女子生徒が立っていた。榊原より10センチは低い。`,
+      `「え、あ、いや、あれは...」\n\n「私、紅茶が好きで。放課後にゆっくりお茶できる場所があったらいいなってずっと思ってたんです。どこの教室ですか？」\n\n目がキラキラしていた。本気だった。`,
+      `榊原は一瞬、逃げることを考えた。しかし、この子の期待に満ちた目を前にして、「あれは冗談でした」とは言えなかった。正確には、言えなくはないが、言った後のことを想像するとあまりにも辛かった。`,
+      `「...まだ教室は決まってないけど」\n\n気がついたら、そう言っていた。\n\n女子生徒の顔がぱっと明るくなった。\n\n「じゃあ私、一番乗りですね。青山茉莉子です、よろしくお願いします」\n\n榊原棺、高校二日目にして部長になる。`,
+    ]
+  },
+];
+
+let currentFilter = 'all';
+let currentId = null;
+
+function available() { return works.filter(w => w.status === 'available'); }
+
+// シリーズの最新話IDセットを返す
+function latestEpisodeIds() {
+  const seriesMap = {};
+  available().forEach(w => {
+    if (!w.seriesId) return;
+    if (!seriesMap[w.seriesId] || w.episode > seriesMap[w.seriesId].episode) {
+      seriesMap[w.seriesId] = w;
+    }
+  });
+  return new Set(Object.values(seriesMap).map(w => w.id));
+}
+
+// ホーム用：シリーズは最新話のみ表示、日付降順
+function filtered() {
+  const av = available();
+  const latest = latestEpisodeIds();
+  const visible = av.filter(w => !w.seriesId || latest.has(w.id));
+  const byFormat = currentFilter === 'all' ? visible : visible.filter(w => w.format === currentFilter);
+  return byFormat.sort((a, b) => new Date(b.date) - new Date(a.date));
+}
+
+// シリーズの全話を話数昇順で返す
+function getSeriesEpisodes(seriesId) {
+  return available()
+    .filter(w => w.seriesId === seriesId)
+    .sort((a, b) => a.episode - b.episode);
+}
+
+function updateStats() {
+  // statsバー削除済み
+}
+
+function render() {
+  const list = document.getElementById('works-list');
+  const data = filtered();
+  updateStats();
+
+  if (!data.length) {
+    list.innerHTML = `<div class="empty-state"><p>該当する作品がありません</p></div>`;
+    return;
+  }
+
+  list.innerHTML = data.map((w, i) => {
+    // シリーズ情報
+    const episodes = w.seriesId ? getSeriesEpisodes(w.seriesId) : null;
+    const totalEp  = episodes ? episodes.length : 1;
+    const daysSince = (Date.now() - new Date(w.date).getTime()) / (1000 * 60 * 60 * 24);
+    const isNew    = w.seriesId && totalEp > 1 && daysSince <= 14;
+    const epLabel  = w.seriesId ? ` ${w.episode}話` : '';
+    const newBadge = isNew ? `<span class="new-badge">NEW</span>` : '';
+
+    return `
+    <div class="work-card" style="animation-delay:${i * 0.07}s">
+      <div class="work-left">
+        <div class="work-num">0${i+1}</div>
+        <span class="work-format-badge ${w.format}">${w.format === 'manga' ? '漫画' : '小説'}</span>
+      </div>
+      <div class="work-mid" onclick="openOverview(${w.id})" style="cursor:pointer;">
+        <div>
+          <div class="work-genre">${w.genre}</div>
+          <div class="work-title">${w.title}${epLabel ? `<span class="ep-badge">${epLabel}</span>` : ''}${newBadge}</div>
+        </div>
+        <div class="work-synopsis">${w.synopsis}</div>
+        <div class="work-bottom-row">
+          <span class="work-meta author-link" onclick="event.stopPropagation(); openProfile('${w.author}')" style="display:flex;align-items:center;gap:0.4rem;">
+            <span style="width:18px;height:18px;border-radius:50%;background:#333;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+            </span>
+            ${w.author}
+          </span>
+          <span class="work-meta">${w.date}</span>
+          <span class="work-reactions">
+            <span class="reaction-item" onclick="event.stopPropagation(); toggleLike(${w.id})">
+              <span class="reaction-icon">${w.liked ? '♥' : '♡'}</span>
+              <span class="reaction-count">${w.likes}</span>
+            </span>
+            <span class="reaction-item" onclick="event.stopPropagation(); openOverview(${w.id})">
+              <span class="reaction-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+              </span>
+              <span class="reaction-count">${w.comments.length}</span>
+            </span>
+          </span>
+        </div>
+      </div>
+      <div class="work-right">
+        <div class="work-price">
+          <span class="work-price-num">${w.price === 0 ? '¥0' : '¥' + w.price.toLocaleString()}</span>
+          <span class="work-price-label">完全譲渡</span>
+        </div>
+        <button class="btn-card primary" onclick="directRead(${w.id})">作品を読む →</button>
+      </div>
+    </div>
+  `}).join('');
+}
+
+function setFilter(type) {
+  currentFilter = type;
+  document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+  const navLinks = document.querySelectorAll('nav a');
+  if (type === 'all') navLinks[0].classList.add('active');
+  if (type === 'manga') navLinks[1].classList.add('active');
+  if (type === 'novel') navLinks[2].classList.add('active');
+  render();
+}
+
+// --- AUTH UI ---
+const AVATAR_PLACEHOLDER = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`;
+
+function updateAuthUI() {
+  const btn = document.getElementById('nav-auth-btn');
+  if (currentUser) {
+    btn.className = '';
+    btn.style.cssText = 'display:flex;align-items:stretch;border-left:none;padding:0;cursor:crosshair;';
+    btn.onclick = handleAuthClick;
+    btn.innerHTML = `
+      <div class="nav-avatar-wrap">
+        <div class="nav-avatar">${currentUser.avatar ? `<img src="${currentUser.avatar}">` : AVATAR_PLACEHOLDER}</div>
+        <span class="nav-avatar-name">${currentUser.name}</span>
+      </div>`;
+  } else {
+    btn.className = 'nav-post';
+    btn.style.cssText = '';
+    btn.onclick = handleAuthClick;
+    btn.textContent = 'ログイン';
+  }
+}
+
+function handleAuthClick(e) {
+  e.preventDefault();
+  if (!currentUser) { openLogin(); return; }
+  const dd = document.getElementById('nav-dropdown');
+  dd.classList.toggle('open');
+}
+
+// ドロップダウンを外クリックで閉じる
+document.addEventListener('click', e => {
+  const wrap = document.getElementById('nav-user-wrap');
+  if (wrap && !wrap.contains(e.target)) {
+    document.getElementById('nav-dropdown').classList.remove('open');
+  }
+});
+
+function goToMyProfile() {
+  document.getElementById('nav-dropdown').classList.remove('open');
+  openProfile(currentUser.name);
+}
+
+function openSettings() {
+  document.getElementById('nav-dropdown').classList.remove('open');
+  document.getElementById('s-name').value = currentUser.name;
+  document.getElementById('s-bio').value = currentUser.bio || '';
+  document.getElementById('settings-overlay').classList.add('open');
+}
+
+function saveSettings() {
+  const name = document.getElementById('s-name').value.trim();
+  const bio = document.getElementById('s-bio').value.trim();
+  if (!name) { toast('ペンネームを入力してください'); return; }
+  currentUser.name = name;
+  currentUser.bio = bio;
+  // usersリストも更新
+  const u = users.find(x => x.id === currentUser.id);
+  if (u) { u.name = name; u.bio = bio; }
+  updateAuthUI();
+  closeOverlay('settings-overlay');
+  toast('プロフィールを更新しました');
+}
+
+function openLogin() {
+  document.getElementById('login-overlay').classList.add('open');
+}
+
+function doLogin(name) {
+  currentUser = users.find(u => u.name === name) || { id: 'demo', name, bio: 'プロフィール未設定', posts: 0, transfers: 0 };
+  closeOverlay('login-overlay');
+  updateAuthUI();
+  toast(`${currentUser.name} としてログインしました`);
+}
+
+function doLogout() {
+  currentUser = null;
+  document.getElementById('nav-dropdown').classList.remove('open');
+  closeOverlay('profile-overlay');
+  updateAuthUI();
+  toast('ログアウトしました');
+}
+
+// --- PROFILE ---
+let currentProfileName = '';
+
+function switchProfTab(tab) {
+  const isInfo = tab === 'info';
+  document.getElementById('prof-tab-info-content').style.display = isInfo ? 'block' : 'none';
+  document.getElementById('prof-tab-manage-content').style.display = isInfo ? 'none' : 'block';
+  document.getElementById('prof-tab-info').style.borderBottomColor = isInfo ? 'var(--white)' : 'transparent';
+  document.getElementById('prof-tab-info').style.color = isInfo ? 'var(--white)' : '#555';
+  document.getElementById('prof-tab-manage').style.borderBottomColor = isInfo ? 'transparent' : 'var(--white)';
+  document.getElementById('prof-tab-manage').style.color = isInfo ? '#555' : 'var(--white)';
+  if (!isInfo) renderManageList();
+}
+
+function openProfile(authorName) {
+  currentProfileName = authorName;
+  const u = getUserByName(authorName);
+  const isMe = currentUser && currentUser.name === authorName;
+  const authorWorks = works.filter(w => w.author === authorName);
+  const transferred = works.filter(w => w.author === authorName && w.status === 'sold').length;
+  const revenue = works.filter(w => w.author === authorName && w.status === 'sold').reduce((s,w) => s+w.price, 0);
+
+  document.getElementById('prof-name').textContent = u.name;
+  document.getElementById('prof-bio').textContent = u.bio || 'プロフィール未設定';
+  document.getElementById('prof-posts').textContent = authorWorks.length;
+  document.getElementById('prof-transfers').textContent = transferred;
+  document.getElementById('prof-revenue').textContent = `¥${revenue.toLocaleString()}`;
+  document.getElementById('prof-logout-btn').style.display = isMe ? 'block' : 'none';
+
+  // タブ：本人のみ「作品管理」タブ表示
+  const tabs = document.getElementById('prof-tabs');
+  tabs.style.display = isMe ? 'flex' : 'none';
+
+  // プロフィールタブをデフォルト表示
+  switchProfTab('info');
+
+  const workList = document.getElementById('prof-works');
+  if (authorWorks.length === 0) {
+    workList.innerHTML = `<p style="font-family:'IBM Plex Mono',monospace;font-size:0.7rem;color:#555;letter-spacing:0.1em;">投稿作品なし</p>`;
+  } else {
+    workList.innerHTML = authorWorks.map(w => `
+      <div class="prof-work-item" onclick="closeOverlay('profile-overlay'); openOverview(${w.id})">
+        <span class="work-format-badge ${w.format}" style="font-size:0.5rem;padding:0.2rem 0.5rem;">${w.format === 'manga' ? '漫画' : '小説'}</span>
+        <span class="prof-work-title">${w.title}</span>
+        <span class="prof-work-status ${w.status === 'sold' ? 'sold' : ''}">${w.status === 'sold' ? '譲渡済' : '募集中'}</span>
+      </div>
+    `).join('');
+  }
+
+  document.getElementById('profile-overlay').classList.add('open');
+}
+
+// --- 作品管理 ---
+function renderManageList() {
+  const myWorks = works.filter(w => w.author === currentProfileName);
+  const list = document.getElementById('prof-manage-list');
+  if (myWorks.length === 0) {
+    list.innerHTML = `<p style="font-family:'IBM Plex Mono',monospace;font-size:0.7rem;color:#555;letter-spacing:0.1em;padding:1rem 0;">投稿作品なし</p>`;
+    return;
+  }
+  list.innerHTML = myWorks.map(w => `
+    <div style="border:1px solid var(--border);margin-bottom:-1px;padding:1.2rem 1.5rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;">
+        <div>
+          <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.3rem;">
+            <span class="work-format-badge ${w.format}" style="font-size:0.5rem;padding:0.2rem 0.5rem;">${w.format === 'manga' ? '漫画' : '小説'}</span>
+            <span style="font-family:'Noto Serif JP',serif;font-size:1rem;font-weight:700;">${w.title}</span>
+          </div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#555;letter-spacing:0.1em;">${w.date} &nbsp;·&nbsp; ♡${w.likes} &nbsp;·&nbsp; <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg> ${(w.comments||[]).length}</div>
+        </div>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+          <button onclick="openManageEdit(${w.id})" style="background:none;border:1px solid var(--border);color:#aaa;padding:0.4rem 0.8rem;font-family:'IBM Plex Mono',monospace;font-size:0.55rem;letter-spacing:0.1em;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.borderColor='#fff';this.style.color='#fff'" onmouseout="this.style.borderColor='var(--border)';this.style.color='#aaa'">✎ 編集</button>
+          ${w.format === 'novel' && w.body ? `<button onclick="openTextEdit(${w.id})" style="background:none;border:1px solid #4488ff;color:#4488ff;padding:0.4rem 0.8rem;font-family:'IBM Plex Mono',monospace;font-size:0.55rem;letter-spacing:0.1em;cursor:pointer;transition:all 0.2s;">本文編集</button>` : ''}
+          ${w.format === 'manga' ? `<label style="background:none;border:1px solid var(--red);color:var(--red);padding:0.4rem 0.8rem;font-family:'IBM Plex Mono',monospace;font-size:0.55rem;letter-spacing:0.1em;cursor:pointer;transition:all 0.2s;"><input type="file" accept="image/*" multiple style="display:none;" onchange="replaceMangaFiles(${w.id}, this)">差し替え</label>` : ''}
+          <button onclick="confirmDelete(${w.id})" style="background:none;border:1px solid #662222;color:#aa4444;padding:0.4rem 0.8rem;font-family:'IBM Plex Mono',monospace;font-size:0.55rem;letter-spacing:0.1em;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='#330000'" onmouseout="this.style.background='none'">削除</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openManageEdit(id) {
+  closeOverlay('profile-overlay');
+  currentId = id;
+  openEditOverlay();
+}
+
+function openTextEdit(id) {
+  const w = works.find(x => x.id === id);
+  if (!w || !w.body) return;
+  currentId = id;
+  // body配列を段落区切りの文字列に変換
+  document.getElementById('text-edit-input').value = w.body.join('\n\n');
+  document.getElementById('text-edit-overlay').classList.add('open');
+}
+
+function saveTextEdit() {
+  const w = works.find(x => x.id === currentId);
+  if (!w) return;
+  const raw = document.getElementById('text-edit-input').value.trim();
+  if (!raw) { toast('本文を入力してください'); return; }
+  // 空行で段落分割
+  w.body = raw.split(/\n{2,}/).map(p => p.trim()).filter(p => p.length > 0);
+  closeOverlay('text-edit-overlay');
+  renderManageList();
+  render();
+  toast('本文を更新しました');
+}
+
+function replaceMangaFiles(id, input) {
+  const w = works.find(x => x.id === id);
+  if (!w || !input.files || input.files.length === 0) return;
+  const files = Array.from(input.files).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+  const readers = files.map(file => new Promise(resolve => {
+    const r = new FileReader();
+    r.onload = e => resolve(e.target.result);
+    r.readAsDataURL(file);
+  }));
+  Promise.all(readers).then(dataUrls => {
+    w.mangaPages = dataUrls;
+    w.mangaUrl = null; // 外部URLから内部データへ切り替え
+    renderManageList();
+    toast(`${files.length}ページの画像を差し替えました`);
+  });
+}
+
+function confirmDelete(id) {
+  const w = works.find(x => x.id === id);
+  if (!w) return;
+  if (!confirm(`「${w.title}」を削除しますか？この操作は元に戻せません。`)) return;
+  const idx = works.findIndex(x => x.id === id);
+  if (idx !== -1) works.splice(idx, 1);
+  renderManageList();
+  // プロフィールの投稿作品欄も更新
+  if (currentUser) openProfile(currentUser.name);
+  else closeOverlay('profile-overlay');
+  render();
+  toast('作品を削除しました');
+}
+
+// --- DETAIL ---
+function openDetail(id) {
+  const w = works.find(x => x.id === id);
+  if (!w) return;
+  currentId = id;
+
+  document.getElementById('d-badges').innerHTML = `<span class="work-format-badge ${w.format}">${w.format === 'manga' ? '漫画' : '小説'}</span>`;
+  document.getElementById('d-title').textContent = w.title;
+  document.getElementById('d-synopsis').textContent = w.synopsis;
+  document.getElementById('d-genre').textContent = w.genre;
+  document.getElementById('d-author').innerHTML = `<span class="author-link" onclick="closeOverlay('detail-overlay'); openProfile('${w.author}')">${w.author}</span>`;
+  document.getElementById('d-format').textContent = w.format === 'manga' ? '漫画' : '小説';
+  document.getElementById('d-date').textContent = w.date;
+  document.getElementById('d-price').textContent = w.price === 0 ? '¥0' : `¥${w.price.toLocaleString()}`;
+  document.getElementById('d-price').style.color = 'var(--white)';
+
+  const btn = document.getElementById('d-acquire-btn');
+  if (!currentUser) {
+    btn.textContent = 'ログインが必要です';
+    btn.style.background = '#333';
+    btn.style.color = '#666';
+  } else {
+    btn.textContent = w.price === 0 ? '無料で権利を取得 →' : '権利を取得する →';
+    btn.style.background = '';
+    btn.style.color = '';
+  }
+
+  document.getElementById('d-read-btn').style.display = w.body ? 'block' : 'none';
+
+  document.getElementById('detail-overlay').classList.add('open');
+}
+
+function openReaderFromDetail() {
+  closeOverlay('detail-overlay');
+  openReader(currentId);
+}
+
+document.getElementById('d-acquire-btn').addEventListener('click', () => {
+  if (!currentUser) { toast('ログインが必要です'); return; }
+  const w = works.find(x => x.id === currentId);
+  if (!w) return;
+  w.status = 'sold';
+  closeOverlay('detail-overlay');
+  render();
+  toast(`「${w.title}」の権利を取得しました`);
+});
+
+// --- POST ---
+function openPost() {
+  if (!currentUser) { openLogin(); return; }
+
+  // シリーズ選択肢を動的生成（既存シリーズのみ）
+  const seriesSelect = document.getElementById('f-series');
+  const seriesIds = [...new Set(available().filter(w => w.seriesId).map(w => w.seriesId))];
+  seriesSelect.innerHTML = '<option value="">新規作品として投稿</option>';
+  seriesIds.forEach(sid => {
+    const eps = getSeriesEpisodes(sid);
+    if (eps.length === 0) return;
+    const latest = eps[eps.length - 1];
+    const opt = document.createElement('option');
+    opt.value = sid;
+    opt.textContent = `${latest.title}（現在${eps.length}話）の続編として投稿`;
+    seriesSelect.appendChild(opt);
+  });
+
+  document.getElementById('post-overlay').classList.add('open');
+}
+
+function closeOverlay(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+document.querySelectorAll('.overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
+});
+
+function submitWork() {
+  if (!currentUser) { toast('ログインが必要です'); return; }
+  const title    = document.getElementById('f-title').value.trim();
+  const synopsis = document.getElementById('f-synopsis').value.trim();
+  const price    = parseInt(document.getElementById('f-price').value);
+  const seriesId = document.getElementById('f-series').value || null;
+
+  if (!title || !synopsis || isNaN(price) || price < 0) {
+    toast('タイトル、あらすじ、価格を入力してください');
+    return;
+  }
+
+  // 話数の自動採番
+  let episode = 1;
+  if (seriesId) {
+    const existing = getSeriesEpisodes(seriesId);
+    episode = existing.length + 1;
+  }
+
+  works.unshift({
+    id: Date.now(),
+    title,
+    format:   document.getElementById('f-format').value,
+    genre:    document.getElementById('f-genre').value || '未設定',
+    author:   currentUser.name,
+    synopsis,
+    price,
+    date:     new Date().toISOString().slice(0, 10),
+    status:   'available',
+    likes:    0,
+    comments: [],
+    liked:    false,
+    body:     null,
+    seriesId,
+    episode,
+  });
+
+  currentUser.posts = (currentUser.posts || 0) + 1;
+  closeOverlay('post-overlay');
+  render();
+  toast(`「${title}」${seriesId ? ` ${episode}話` : ''}を投稿しました`);
+  ['f-title','f-genre','f-synopsis','f-author','f-price'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-series').value = '';
+}
+
+// --- PREVIEW ---
+function openPreview(source) {
+  let title, genre, author, body;
+  const today = new Date().toISOString().slice(0, 10);
+
+  if (source === 'post') {
+    title  = document.getElementById('f-title').value.trim() || '（タイトル未入力）';
+    genre  = document.getElementById('f-genre').value.trim() || '未設定';
+    author = currentUser ? currentUser.name : (document.getElementById('f-author').value.trim() || '匿名');
+    body   = null;
+  } else if (source === 'edit') {
+    const w = works.find(x => x.id === currentId);
+    title  = document.getElementById('e-title').value.trim() || w?.title || '';
+    genre  = document.getElementById('e-genre').value.trim() || '未設定';
+    author = w?.author || '';
+    body   = w?.body || null;
+  } else if (source === 'text') {
+    const w = works.find(x => x.id === currentId);
+    title  = w?.title || '';
+    genre  = w?.genre || '';
+    author = w?.author || '';
+    const raw = document.getElementById('text-edit-input').value.trim();
+    body = raw ? raw.split(/\n{2,}/).map(p => p.trim()).filter(p => p) : w?.body || null;
+  }
+
+  const bodyEl = document.getElementById('pv-body');
+  if (body && body.length > 0) {
+    bodyEl.innerHTML = `
+      <h1>${title}</h1>
+      <div class="reader-meta">by ${author} &nbsp;|&nbsp; ${genre} &nbsp;|&nbsp; ${today}</div>
+      ${body.map(p => `<p class="reader-paragraph">${p.replace(/\n/g, '<br>')}</p>`).join('')}
+    `;
+  } else {
+    bodyEl.innerHTML = `
+      <h1>${title}</h1>
+      <div class="reader-meta">by ${author} &nbsp;|&nbsp; ${genre} &nbsp;|&nbsp; ${today}</div>
+      <p class="reader-paragraph" style="color:#aaa;">（本文はまだありません）</p>
+    `;
+  }
+
+  const page = document.getElementById('preview-page');
+  page.scrollTop = 0;
+  page.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function openOverview(id) {
+  const w = works.find(x => x.id === id);
+  if (!w) return;
+  currentId = id;
+
+  document.getElementById('ov-format-label').textContent = w.format === 'manga' ? '漫画' : '小説';
+  document.getElementById('ov-genre').textContent = w.genre;
+  document.getElementById('ov-title').textContent = w.title;
+  const authorEl = document.getElementById('ov-author');
+  authorEl.textContent = w.author;
+  authorEl.dataset.name = w.author;
+  document.getElementById('ov-date').textContent = w.date;
+  document.getElementById('ov-synopsis').textContent = w.synopsis;
+  document.getElementById('ov-price').textContent = w.price === 0 ? '¥0' : `¥${w.price.toLocaleString()}`;
+
+  // 編集ボタン：本人のみ
+  document.getElementById('ov-edit-btn').style.display =
+    (currentUser && currentUser.name === w.author) ? 'block' : 'none';
+
+  // 話数リスト（シリーズのみ）
+  const epListEl = document.getElementById('ov-ep-list');
+  if (w.seriesId) {
+    const episodes = getSeriesEpisodes(w.seriesId);
+    epListEl.style.display = 'block';
+    epListEl.innerHTML = `
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:0.5rem;color:#555;letter-spacing:0.2em;margin-bottom:0.6rem;">バックナンバー</div>
+      ${[...episodes].reverse().map(ep => {
+        const isLatest = ep.id === episodes[episodes.length - 1].id;
+        const daysSince = (Date.now() - new Date(ep.date).getTime()) / (1000 * 60 * 60 * 24);
+        const showNew = isLatest && daysSince <= 14;
+        return `
+        <div class="ep-row">
+          <div class="ep-row-info">
+            <div class="ep-row-num">${ep.episode}話${showNew ? ' <span class="new-badge">NEW</span>' : ''}</div>
+            <div style="font-size:0.82rem;color:#ccc;">${ep.title}</div>
+            <div class="ep-row-author">by ${ep.author} · ${ep.date}</div>
+          </div>
+          <button class="ep-row-read" onclick="closeOverlay('overview-overlay'); currentId=${ep.id}; openReader(${ep.id});">作品を読む →</button>
+        </div>`;
+      }).join('')}
+    `;
+  } else {
+    epListEl.style.display = 'none';
+  }
+
+  updateOverviewReactions(w);
+  document.getElementById('overview-overlay').classList.add('open');
+}
+
+function updateOverviewReactions(w) {
+  document.getElementById('ov-like-icon').textContent = w.liked ? '♥' : '♡';
+  document.getElementById('ov-like-count').textContent = w.likes;
+  document.getElementById('ov-like-btn').style.borderColor = w.liked ? '#e44' : 'var(--border)';
+  document.getElementById('ov-like-btn').style.color = w.liked ? '#e44' : '#aaa';
+  document.getElementById('ov-comment-count').textContent = (w.comments || []).length;
+
+  const list = document.getElementById('ov-comments-list');
+  if (!w.comments || w.comments.length === 0) {
+    list.innerHTML = `<p style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:#444;letter-spacing:0.05em;">まだコメントはありません</p>`;
+  } else {
+    list.innerHTML = w.comments.map(c => `
+      <div style="border-bottom:1px solid var(--border);padding-bottom:1rem;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.6rem;color:#555;margin-bottom:0.4rem;">${c.author} · ${c.date}</div>
+        <div style="font-size:0.85rem;color:#ccc;line-height:1.8;">${c.text}</div>
+      </div>
+    `).join('');
+  }
+  document.getElementById('ov-comment-form').style.display = currentUser ? 'block' : 'none';
+  document.getElementById('ov-comment-login').style.display = currentUser ? 'none' : 'block';
+}
+
+function toggleLikeFromOverview() {
+  if (!currentUser) { toast('ログインが必要です'); return; }
+  const w = works.find(x => x.id === currentId);
+  if (!w) return;
+  w.liked = !w.liked;
+  w.likes += w.liked ? 1 : -1;
+  updateOverviewReactions(w);
+  render();
+}
+
+function submitOverviewComment() {
+  if (!currentUser) return;
+  const input = document.getElementById('ov-comment-input');
+  const text = input.value.trim();
+  if (!text) return;
+  const w = works.find(x => x.id === currentId);
+  if (!w) return;
+  const now = new Date();
+  const date = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  if (!w.comments) w.comments = [];
+  w.comments.push({ author: currentUser.name, text, date });
+  input.value = '';
+  updateOverviewReactions(w);
+  render();
+}
+
+// 概要モーダルから読書ページへ
+function readFromOverview() {
+  closeOverlay('overview-overlay');
+  directRead(currentId);
+}
+
+// カードの「作品を読む」から直で読書ページへ
+function directRead(id) {
+  const w = works.find(x => x.id === id);
+  if (!w) return;
+  currentId = id;
+  if (w.mangaUrl) {
+    window.location.href = w.mangaUrl;
+    return;
+  }
+  if (w.body) {
+    openReader(id);
+  } else {
+    toast('本文はまだ公開されていません');
+  }
+}
+
+// --- READER ---
+function openReader(id) {
+  const w = works.find(x => x.id === id);
+  if (!w || !w.body) return;
+  currentId = id;
+
+  const epLabel = w.seriesId ? ` ${w.episode}話` : '';
+  const fullTitle = `${w.title}${epLabel}`;
+
+  document.getElementById('r-page-title').textContent = fullTitle;
+  document.getElementById('r-body').innerHTML = `
+    <h1>${fullTitle}</h1>
+    <div class="reader-meta">by ${w.author} &nbsp;|&nbsp; ${w.genre} &nbsp;|&nbsp; ${w.date}</div>
+    ${w.body.map(p => `<p class="reader-paragraph">${p.replace(/\n/g, '<br>')}</p>`).join('')}
+    <p style="font-family:'Noto Serif JP',serif;font-size:1rem;color:#111;letter-spacing:0.2em;margin-top:2.5rem;margin-bottom:0.5rem;">— つづく —</p>
+  `;
+  // バーのいいね・コメント数を同期
+  updateReaderBar(w);
+
+  const page = document.getElementById('reader-page');
+  page.scrollTop = 0;
+  page.classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  // スクロール末尾でバーを表示。次話があれば「続きを読む」、なければ「続きを書く」
+  const bar = document.getElementById('r-sequel-bar');
+  bar.style.display = 'none';
+
+  // 次話を探す
+  const nextEp = w.seriesId
+    ? getSeriesEpisodes(w.seriesId).find(ep => ep.episode === w.episode + 1)
+    : null;
+
+  // バーの文言とボタンを切り替え
+  const barMsg  = bar.querySelector('div > div:last-child');
+  const writeBtn = bar.querySelector('button:last-child');
+  if (nextEp) {
+    barMsg.textContent = `${nextEp.episode}話が公開されています`;
+    writeBtn.textContent = `続きを読む →`;
+    writeBtn.onclick = () => { closeReader(); openReader(nextEp.id); };
+  } else {
+    barMsg.textContent = 'この作品の続きを書きませんか？';
+    writeBtn.textContent = '続きを書く →';
+    writeBtn.onclick = acquireAndWrite;
+  }
+
+  page.onscroll = () => {
+    const nearBottom = page.scrollTop + page.clientHeight >= page.scrollHeight - 80;
+    bar.style.display = nearBottom ? 'flex' : 'none';
+  };
+}
+
+function updateReaderBar(w) {
+  document.getElementById('r-like-icon').textContent = w.liked ? '♥' : '♡';
+  document.getElementById('r-like-count').textContent = w.likes;
+  document.getElementById('r-like-btn').style.borderColor = w.liked ? '#e44' : '#ccc';
+  document.getElementById('r-like-btn').style.color = w.liked ? '#e44' : '#555';
+  document.getElementById('r-comment-count').textContent = (w.comments || []).length;
+}
+
+function toggleLikeFromReader() {
+  if (!currentUser) { toast('ログインが必要です'); return; }
+  const w = works.find(x => x.id === currentId);
+  if (!w) return;
+  w.liked = !w.liked;
+  w.likes += w.liked ? 1 : -1;
+  updateReaderBar(w);
+  render();
+}
+
+function openCommentFromReader() {
+  // 概要ページのコメント欄へ戻る
+  closeReader();
+  // detail-pageが開いていない場合は開く
+  if (!document.getElementById('detail-page').classList.contains('open')) {
+    openOverview(currentId);
+  }
+  // コメント入力欄へスクロール
+  setTimeout(() => {
+    const el = document.getElementById('dp-comment-input') || document.getElementById('dp-comment-login');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (document.getElementById('dp-comment-input')) document.getElementById('dp-comment-input').focus();
+  }, 150);
+}
+
+function closeReader() {
+  document.getElementById('reader-page').classList.remove('open');
+  document.getElementById('reader-page').onscroll = null;
+  document.getElementById('r-sequel-bar').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function openReaderFromDetail() {
+  closeOverlay('detail-overlay');
+  openReader(currentId);
+}
+
+// 続きを書く → 権利取得
+function acquireAndWrite() {
+  if (!currentUser) { toast('ログインが必要です'); return; }
+  const w = works.find(x => x.id === currentId);
+  if (!w) return;
+  w.status = 'sold';
+  closeReader();
+  closePage('detail-page');
+  render();
+  toast(`「${w.title}」の権利を取得しました。続きを書いてください！`);
+}
+
+function acquireFromPage() {
+  acquireAndWrite();
+}
+
+function toggleLike(id) {
+  if (!currentUser) { toast('ログインが必要です'); return; }
+  const w = works.find(x => x.id === id);
+  if (!w) return;
+  w.liked = !w.liked;
+  w.likes += w.liked ? 1 : -1;
+  render();
+}
+
+// --- EDIT ---
+function openEditOverlay() {
+  const w = works.find(x => x.id === currentId);
+  if (!w || !currentUser || currentUser.name !== w.author) return;
+  document.getElementById('e-title').value = w.title;
+  document.getElementById('e-format').value = w.format;
+  document.getElementById('e-genre').value = w.genre;
+  document.getElementById('e-synopsis').value = w.synopsis;
+  document.getElementById('e-price').value = w.price;
+  document.getElementById('edit-overlay').classList.add('open');
+}
+
+function saveEdit() {
+  const w = works.find(x => x.id === currentId);
+  if (!w) return;
+  const title = document.getElementById('e-title').value.trim();
+  const synopsis = document.getElementById('e-synopsis').value.trim();
+  const price = parseInt(document.getElementById('e-price').value);
+  if (!title || !synopsis || isNaN(price)) { toast('入力内容を確認してください'); return; }
+  w.title    = title;
+  w.format   = document.getElementById('e-format').value;
+  w.genre    = document.getElementById('e-genre').value || '未設定';
+  w.synopsis = synopsis;
+  w.price    = price;
+  closeOverlay('edit-overlay');
+  openOverview(currentId); // 概要モーダルを更新
+  render();
+  toast('作品を更新しました');
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+updateAuthUI();
+render();
+</script>
+</body>
+</html>
