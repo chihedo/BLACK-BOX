@@ -1238,9 +1238,10 @@ footer {
         <div id="f-manga-preview" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:0.5rem;"></div>
       </div>
       <div class="form-block" id="f-series-block">
-        <label class="form-lbl">シリーズに追加（続編の場合）</label>
+        <label class="form-lbl">シリーズ設定</label>
         <select class="form-ctrl" id="f-series">
-          <option value="">新規作品として投稿</option>
+          <option value="">単独作品として投稿</option>
+          <option value="__new__">新しいシリーズの1話目として投稿</option>
         </select>
       </div>
       <div class="form-row">
@@ -1729,15 +1730,23 @@ async function saveSettings() {
   const bio  = document.getElementById('s-bio').value.trim();
   if (!name) { toast('ペンネームを入力してください'); return; }
 
+  const oldName = currentUser.name;
+  const nameChanged = name !== oldName;
+
   const { error } = await db.from('profiles')
     .update({ name, bio })
     .eq('id', currentUser.id);
-
   if (error) { toast('更新失敗: ' + error.message); return; }
+
+  if (nameChanged) {
+    await db.from('works').update({ author: name }).eq('author', oldName);
+    works.forEach(w => { if (w.author === oldName) w.author = name; });
+  }
 
   currentUser.name = name;
   currentUser.bio  = bio;
   updateAuthUI();
+  render();
   closeOverlay('settings-overlay');
   toast('プロフィールを更新しました');
 }
@@ -2025,7 +2034,7 @@ function openPost() {
   // シリーズ選択肢を動的生成
   const seriesSelect = document.getElementById('f-series');
   const seriesIds = [...new Set(available().filter(w => w.seriesId).map(w => w.seriesId))];
-  seriesSelect.innerHTML = '<option value="">新規作品として投稿</option>';
+  seriesSelect.innerHTML = '<option value="">単独作品として投稿</option><option value="__new__">新しいシリーズの1話目として投稿</option>';
   seriesIds.forEach(sid => {
     const eps = getSeriesEpisodes(sid);
     if (eps.length === 0) return;
@@ -2052,7 +2061,11 @@ async function submitWork() {
   const title    = document.getElementById('f-title').value.trim();
   const synopsis = document.getElementById('f-synopsis').value.trim();
   const price    = parseInt(document.getElementById('f-price').value);
-  const seriesId = document.getElementById('f-series').value || null;
+  const seriesRaw = document.getElementById('f-series').value;
+  // __new__は新しいシリーズIDを自動生成
+  const seriesId = seriesRaw === '__new__'
+    ? `series-${Date.now()}`
+    : (seriesRaw || null);
   const format   = document.getElementById('f-format').value;
 
   if (!title || !synopsis || isNaN(price) || price < 0) {
