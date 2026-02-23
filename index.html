@@ -1207,8 +1207,8 @@ footer {
     </div>
     <div class="modal-content">
       <div class="form-block">
-        <label class="form-lbl">タイトル *</label>
-        <input type="text" class="form-ctrl" id="f-title" placeholder="作品タイトル">
+        <label class="form-lbl">タイトル * <span id="f-title-count" style="float:right;color:#555;">0/40</span></label>
+        <input type="text" class="form-ctrl" id="f-title" placeholder="作品タイトル" maxlength="40" oninput="document.getElementById('f-title-count').textContent=this.value.length+'/40'">
       </div>
       <div class="form-row">
         <div class="form-block">
@@ -1224,8 +1224,8 @@ footer {
         </div>
       </div>
       <div class="form-block">
-        <label class="form-lbl">あらすじ・第1話の内容 *</label>
-        <textarea class="form-ctrl" id="f-synopsis" placeholder="どんな話か、どこで止まっているかを書いてください"></textarea>
+        <label class="form-lbl">あらすじ・第1話の内容 * <span id="f-synopsis-count" style="float:right;color:#555;">0/160</span></label>
+        <textarea class="form-ctrl" id="f-synopsis" placeholder="どんな話か、どこで止まっているかを書いてください" maxlength="160" oninput="document.getElementById('f-synopsis-count').textContent=this.value.length+'/160'"></textarea>
       </div>
       <div class="form-block" id="f-manga-block" style="display:none;">
         <label class="form-lbl">漫画原稿（画像ファイル、複数選択可）</label>
@@ -2060,12 +2060,15 @@ async function submitWork() {
     const files = document.getElementById('f-manga-files').files;
     if (files.length > 0) {
       toast('原稿をアップロード中...');
-      const folderName = `${currentUser.name}_${Date.now()}`;
+      const folderName = `${currentUser.id}_${Date.now()}`;
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const ext = file.name.split('.').pop();
+        const ext = file.name.split('.').pop().toLowerCase();
         const path = `${folderName}/${String(i+1).padStart(3,'0')}.${ext}`;
-        const { error } = await db.storage.from('manga').upload(path, file);
+        const { data, error } = await db.storage.from('manga').upload(path, file, {
+          contentType: file.type,
+          upsert: false,
+        });
         if (error) { toast('アップロード失敗: ' + error.message); return; }
         const { data: urlData } = db.storage.from('manga').getPublicUrl(path);
         mangaPages.push(urlData.publicUrl);
