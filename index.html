@@ -1095,6 +1095,7 @@ footer {
   footer { padding: 1.5rem; flex-direction: column; gap: 0.5rem; text-align: center; }
 }
 </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -1275,17 +1276,41 @@ footer {
 <div class="overlay" id="login-overlay">
   <div class="modal">
     <div class="modal-top-bar">
-      <span class="modal-label">ログイン</span>
+      <span class="modal-label" id="login-modal-label">ログイン</span>
       <button class="modal-close" onclick="closeOverlay('login-overlay')">✕</button>
     </div>
     <div class="modal-content">
-      <p style="font-size:0.8rem;color:#888;font-family:'IBM Plex Mono',monospace;letter-spacing:0.05em;margin-bottom:1.5rem;line-height:1.8;">これはプロトタイプです。ユーザーを選んでログインしてください。</p>
-      <div style="display:flex;flex-direction:column;gap:1px;">
-        <button class="btn-submit" style="margin:0;" onclick="doLogin('朝日')">朝日 としてログイン</button>
-        <button class="btn-submit" style="margin:0;background:#111;color:#fff;border:1px solid #333;" onclick="doLogin('ミヤモト')">ミヤモト としてログイン</button>
-        <button class="btn-submit" style="margin:0;background:#111;color:#fff;border:1px solid #333;" onclick="doLogin('カワハラ')">カワハラ としてログイン</button>
-        <button class="btn-submit" style="margin:0;background:#111;color:#fff;border:1px solid #333;" onclick="doLogin('タナカ K')">タナカ K としてログイン</button>
-        <button class="btn-submit" style="margin:0;background:#111;color:#fff;border:1px solid #333;" onclick="doLogin('あなた')">新規ユーザーとしてログイン</button>
+      <div id="login-form">
+        <div class="form-block">
+          <label class="form-lbl">メールアドレス</label>
+          <input type="email" class="form-ctrl" id="login-email" placeholder="your@email.com">
+        </div>
+        <div class="form-block">
+          <label class="form-lbl">パスワード</label>
+          <input type="password" class="form-ctrl" id="login-password" placeholder="••••••••">
+        </div>
+        <button class="btn-submit" onclick="doLogin()">ログイン →</button>
+        <div style="margin-top:1rem;text-align:center;">
+          <button onclick="switchToSignup()" style="background:none;border:none;color:#555;font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.1em;cursor:pointer;text-decoration:underline;">アカウントを作成する</button>
+        </div>
+      </div>
+      <div id="signup-form" style="display:none;">
+        <div class="form-block">
+          <label class="form-lbl">ペンネーム *</label>
+          <input type="text" class="form-ctrl" id="signup-name" placeholder="表示名">
+        </div>
+        <div class="form-block">
+          <label class="form-lbl">メールアドレス *</label>
+          <input type="email" class="form-ctrl" id="signup-email" placeholder="your@email.com">
+        </div>
+        <div class="form-block">
+          <label class="form-lbl">パスワード *</label>
+          <input type="password" class="form-ctrl" id="signup-password" placeholder="6文字以上">
+        </div>
+        <button class="btn-submit" onclick="doSignup()">アカウント作成 →</button>
+        <div style="margin-top:1rem;text-align:center;">
+          <button onclick="switchToLogin()" style="background:none;border:none;color:#555;font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.1em;cursor:pointer;text-decoration:underline;">ログインに戻る</button>
+        </div>
       </div>
     </div>
   </div>
@@ -1505,6 +1530,11 @@ footer {
 <div class="toast" id="toast"></div>
 
 <script>
+// --- SUPABASE ---
+const SUPABASE_URL = 'https://gfpwasvmfjiwpyjlamth.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdmcHdhc3ZtZmppd3B5amxhbXRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4MjEyODEsImV4cCI6MjA4NzM5NzI4MX0._dWKmTSLJzZ6uNzwFk3fAj-qx4_zDe5zWB3qGhSdkcE';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 // --- AUTH ---
 let currentUser = null;
 
@@ -1761,14 +1791,59 @@ function openLogin() {
   document.getElementById('login-overlay').classList.add('open');
 }
 
-function doLogin(name) {
-  currentUser = users.find(u => u.name === name) || { id: 'demo', name, bio: 'プロフィール未設定', posts: 0, transfers: 0 };
+// ログイン/サインアップ切り替え
+function switchToSignup() {
+  document.getElementById('login-form').style.display = 'none';
+  document.getElementById('signup-form').style.display = 'block';
+  document.getElementById('login-modal-label').textContent = 'アカウント作成';
+}
+function switchToLogin() {
+  document.getElementById('signup-form').style.display = 'none';
+  document.getElementById('login-form').style.display = 'block';
+  document.getElementById('login-modal-label').textContent = 'ログイン';
+}
+
+async function doLogin() {
+  const email    = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  if (!email || !password) { toast('メールとパスワードを入力してください'); return; }
+
+  const { data, error } = await db.auth.signInWithPassword({ email, password });
+  if (error) { toast('ログイン失敗: ' + error.message); return; }
+
+  await loadCurrentUser(data.user);
   closeOverlay('login-overlay');
-  updateAuthUI();
   toast(`${currentUser.name} としてログインしました`);
 }
 
-function doLogout() {
+async function doSignup() {
+  const name     = document.getElementById('signup-name').value.trim();
+  const email    = document.getElementById('signup-email').value.trim();
+  const password = document.getElementById('signup-password').value;
+  if (!name || !email || !password) { toast('すべての項目を入力してください'); return; }
+  if (password.length < 6) { toast('パスワードは6文字以上にしてください'); return; }
+
+  const { data, error } = await db.auth.signUp({ email, password });
+  if (error) { toast('登録失敗: ' + error.message); return; }
+
+  // profilesテーブルにユーザー情報を保存
+  await db.from('profiles').insert({ id: data.user.id, name, bio: '', posts: 0, transfers: 0 });
+
+  await loadCurrentUser(data.user);
+  closeOverlay('login-overlay');
+  toast(`${name} として登録しました`);
+}
+
+async function loadCurrentUser(user) {
+  const { data } = await db.from('profiles').select('*').eq('id', user.id).single();
+  if (data) {
+    currentUser = data;
+  }
+  updateAuthUI();
+}
+
+async function doLogout() {
+  await db.auth.signOut();
   currentUser = null;
   document.getElementById('nav-dropdown').classList.remove('open');
   closeOverlay('profile-overlay');
@@ -1992,7 +2067,7 @@ document.querySelectorAll('.overlay').forEach(el => {
   el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
 });
 
-function submitWork() {
+async function submitWork() {
   if (!currentUser) { toast('ログインが必要です'); return; }
   const title    = document.getElementById('f-title').value.trim();
   const synopsis = document.getElementById('f-synopsis').value.trim();
@@ -2011,25 +2086,30 @@ function submitWork() {
     episode = existing.length + 1;
   }
 
-  works.unshift({
-    id: Date.now(),
+  const newWork = {
     title,
-    format:   document.getElementById('f-format').value,
-    genre:    document.getElementById('f-genre').value || '未設定',
-    author:   currentUser.name,
+    format:    document.getElementById('f-format').value,
+    genre:     document.getElementById('f-genre').value || '未設定',
+    author:    currentUser.name,
     synopsis,
     price,
-    date:     new Date().toISOString().slice(0, 10),
-    status:   'available',
-    likes:    0,
-    comments: [],
-    liked:    false,
-    body:     null,
-    seriesId,
+    date:      new Date().toISOString().slice(0, 10),
+    status:    'available',
+    likes:     0,
+    body:      null,
+    series_id: seriesId,
     episode,
-  });
+  };
+
+  const { data, error } = await db.from('works').insert(newWork).select().single();
+  if (error) { toast('投稿に失敗しました: ' + error.message); return; }
+
+  // ローカルにも追加（即時反映）
+  works.unshift({ ...data, comments: [], liked: false, seriesId: data.series_id });
 
   currentUser.posts = (currentUser.posts || 0) + 1;
+  await db.from('profiles').update({ posts: currentUser.posts }).eq('id', currentUser.id);
+
   closeOverlay('post-overlay');
   render();
   toast(`「${title}」${seriesId ? ` ${episode}話` : ''}を投稿しました`);
@@ -2360,8 +2440,38 @@ function toast(msg) {
   setTimeout(() => el.classList.remove('show'), 3000);
 }
 
-updateAuthUI();
-render();
+// --- 初期化（Supabaseからデータ取得） ---
+async function init() {
+  // セッション復元
+  const { data: { session } } = await db.auth.getSession();
+  if (session) await loadCurrentUser(session.user);
+
+  // 作品をSupabaseから取得
+  const { data: worksData } = await db.from('works')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (worksData && worksData.length > 0) {
+    // コメントも取得
+    const { data: commentsData } = await db.from('comments').select('*');
+    // いいねも取得
+    const { data: likesData } = await db.from('likes').select('*');
+
+    works = worksData.map(w => ({
+      ...w,
+      seriesId: w.series_id,
+      comments: (commentsData || []).filter(c => c.work_id === w.id),
+      liked: currentUser
+        ? (likesData || []).some(l => l.work_id === w.id && l.user_name === currentUser.name)
+        : false,
+    }));
+  }
+
+  updateAuthUI();
+  render();
+}
+
+init();
 </script>
 </body>
 </html>
