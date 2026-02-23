@@ -704,6 +704,11 @@ nav a.active { color: var(--white); }
   margin-bottom: 0.6rem;
 }
 
+.form-lbl .req {
+  color: var(--red);
+  margin-left: 0.2em;
+}
+
 .form-ctrl {
   width: 100%;
   background: var(--dim);
@@ -1207,12 +1212,12 @@ footer {
     </div>
     <div class="modal-content">
       <div class="form-block">
-        <label class="form-lbl">タイトル * <span id="f-title-count" style="float:right;color:#555;">0/40</span></label>
+        <label class="form-lbl">タイトル <span class="req">*</span> <span id="f-title-count" style="float:right;color:#555;">0/40</span></label>
         <input type="text" class="form-ctrl" id="f-title" placeholder="作品タイトル" maxlength="40" oninput="document.getElementById('f-title-count').textContent=this.value.length+'/40'">
       </div>
       <div class="form-row">
         <div class="form-block">
-          <label class="form-lbl">形式 *</label>
+          <label class="form-lbl">形式 <span class="req">*</span></label>
           <select class="form-ctrl" id="f-format">
             <option value="manga">漫画</option>
             <option value="novel">小説</option>
@@ -1224,7 +1229,7 @@ footer {
         </div>
       </div>
       <div class="form-block">
-        <label class="form-lbl">あらすじ・第1話の内容 * <span id="f-synopsis-count" style="float:right;color:#555;">0/160</span></label>
+        <label class="form-lbl">あらすじ・第1話の内容 <span class="req">*</span> <span id="f-synopsis-count" style="float:right;color:#555;">0/160</span></label>
         <textarea class="form-ctrl" id="f-synopsis" placeholder="どんな話か、どこで止まっているかを書いてください" maxlength="160" oninput="document.getElementById('f-synopsis-count').textContent=this.value.length+'/160'"></textarea>
       </div>
       <div class="form-block" id="f-manga-block" style="display:none;">
@@ -1244,7 +1249,7 @@ footer {
           <input type="text" class="form-ctrl" id="f-author" placeholder="匿名可">
         </div>
         <div class="form-block">
-          <label class="form-lbl">譲渡価格（¥）*</label>
+          <label class="form-lbl">譲渡価格（¥）<span class="req">*</span></label>
           <input type="number" class="form-ctrl" id="f-price" placeholder="例: 500" min="0">
         </div>
       </div>
@@ -1301,15 +1306,15 @@ footer {
       </div>
       <div id="signup-form" style="display:none;">
         <div class="form-block">
-          <label class="form-lbl">ペンネーム *</label>
+          <label class="form-lbl">ペンネーム <span class="req">*</span></label>
           <input type="text" class="form-ctrl" id="signup-name" placeholder="表示名">
         </div>
         <div class="form-block">
-          <label class="form-lbl">メールアドレス *</label>
+          <label class="form-lbl">メールアドレス <span class="req">*</span></label>
           <input type="email" class="form-ctrl" id="signup-email" placeholder="your@email.com">
         </div>
         <div class="form-block">
-          <label class="form-lbl">パスワード *</label>
+          <label class="form-lbl">パスワード <span class="req">*</span></label>
           <input type="password" class="form-ctrl" id="signup-password" placeholder="6文字以上">
         </div>
         <button class="btn-submit" onclick="doSignup()">アカウント作成 →</button>
@@ -1524,7 +1529,7 @@ footer {
 </div>
 
 <!-- PREVIEW PAGE（読書ページと同じ表示） -->
-<div class="reader-page-wrap" id="preview-page" style="z-index:600;">
+<div class="reader-page-wrap" id="preview-page" style="z-index:1100;">
   <div class="reader-page-header" style="justify-content:space-between;">
     <button class="reader-back-btn" onclick="document.getElementById('preview-page').classList.remove('open');document.body.style.overflow='';">← 編集に戻る</button>
     <span style="font-family:'IBM Plex Mono',monospace;font-size:0.6rem;color:#999;letter-spacing:0.15em;">PREVIEW</span>
@@ -1719,15 +1724,19 @@ function openSettings() {
   document.getElementById('settings-overlay').classList.add('open');
 }
 
-function saveSettings() {
+async function saveSettings() {
   const name = document.getElementById('s-name').value.trim();
-  const bio = document.getElementById('s-bio').value.trim();
+  const bio  = document.getElementById('s-bio').value.trim();
   if (!name) { toast('ペンネームを入力してください'); return; }
+
+  const { error } = await db.from('profiles')
+    .update({ name, bio })
+    .eq('id', currentUser.id);
+
+  if (error) { toast('更新失敗: ' + error.message); return; }
+
   currentUser.name = name;
-  currentUser.bio = bio;
-  // usersリストも更新
-  const u = users.find(x => x.id === currentUser.id);
-  if (u) { u.name = name; u.bio = bio; }
+  currentUser.bio  = bio;
   updateAuthUI();
   closeOverlay('settings-overlay');
   toast('プロフィールを更新しました');
@@ -2054,24 +2063,28 @@ async function submitWork() {
     episode = existing.length + 1;
   }
 
-  // 漫画の場合はファイルをStorageにアップロード
+  // 漫画の場合はファイルをStorageにアップロード（並列処理）
   let mangaPages = [];
   if (format === 'manga') {
     const files = document.getElementById('f-manga-files').files;
     if (files.length > 0) {
       toast('原稿をアップロード中...');
       const folderName = `${currentUser.id}_${Date.now()}`;
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
+      const uploadPromises = [...files].map((file, i) => {
         const ext = file.name.split('.').pop().toLowerCase();
         const path = `${folderName}/${String(i+1).padStart(3,'0')}.${ext}`;
-        const { data, error } = await db.storage.from('manga').upload(path, file, {
-          contentType: file.type,
-          upsert: false,
-        });
-        if (error) { toast('アップロード失敗: ' + error.message); return; }
-        const { data: urlData } = db.storage.from('manga').getPublicUrl(path);
-        mangaPages.push(urlData.publicUrl);
+        return db.storage.from('manga').upload(path, file, { contentType: file.type, upsert: true })
+          .then(({ error }) => {
+            if (error) throw new Error(error.message);
+            return db.storage.from('manga').getPublicUrl(path).data.publicUrl;
+          });
+      });
+      try {
+        const urls = await Promise.all(uploadPromises);
+        mangaPages = urls;
+      } catch (e) {
+        toast('アップロード失敗: ' + e.message);
+        return;
       }
     }
   }
