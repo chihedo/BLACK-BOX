@@ -1269,7 +1269,16 @@ footer {
       <span class="modal-label">アカウント設定</span>
       <button class="modal-close" onclick="closeOverlay('settings-overlay')">✕</button>
     </div>
-    <div class="modal-content">
+
+    <!-- タブ -->
+    <div style="display:flex;border-bottom:1px solid var(--border);">
+      <button onclick="switchSettingsTab('profile')" id="settings-tab-profile" style="flex:1;padding:0.8rem;background:#111;border:none;border-bottom:2px solid var(--white);color:var(--white);font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.15em;cursor:pointer;">プロフィール</button>
+      <button onclick="switchSettingsTab('account')" id="settings-tab-account" style="flex:1;padding:0.8rem;background:#111;border:none;border-bottom:2px solid transparent;color:#555;font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.15em;cursor:pointer;">アカウント</button>
+      <button onclick="switchSettingsTab('danger')" id="settings-tab-danger" style="flex:1;padding:0.8rem;background:#111;border:none;border-bottom:2px solid transparent;color:#555;font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.15em;cursor:pointer;">退会</button>
+    </div>
+
+    <!-- プロフィールタブ -->
+    <div id="settings-content-profile" class="modal-content">
       <div class="form-block" style="display:flex;align-items:center;gap:1.5rem;margin-bottom:1.5rem;">
         <div id="s-avatar-preview" style="width:64px;height:64px;border-radius:50%;background:#222;border:1px solid #333;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
@@ -1293,6 +1302,37 @@ footer {
       </div>
       <button class="btn-submit" onclick="saveSettings()">保存する →</button>
     </div>
+
+    <!-- アカウントタブ -->
+    <div id="settings-content-account" class="modal-content" style="display:none;">
+      <div class="form-block">
+        <label class="form-lbl">メールアドレス</label>
+        <input type="email" class="form-ctrl" id="s-email" placeholder="new@email.com">
+        <div style="margin-top:0.75rem;">
+          <button class="btn-submit" onclick="updateEmail()" style="width:100%;">メールアドレスを変更 →</button>
+        </div>
+      </div>
+      <div class="form-block" style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--border);">
+        <label class="form-lbl">パスワード変更</label>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#aaa;line-height:2;letter-spacing:0.05em;margin-bottom:0.75rem;">
+          登録中のメールアドレスにパスワード変更リンクを送信します
+        </div>
+        <button class="btn-submit" onclick="sendPasswordReset()" style="width:100%;">変更リンクを送信 →</button>
+      </div>
+    </div>
+
+    <!-- 退会タブ -->
+    <div id="settings-content-danger" class="modal-content" style="display:none;">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:#aaa;line-height:2;letter-spacing:0.05em;margin-bottom:2rem;">
+        退会すると以下の処理が行われます。<br>
+        ・ログインできなくなります<br>
+        ・譲渡済みの作品はそのまま残ります<br>
+        ・未譲渡の作品は非公開になります<br>
+        ・この操作は取り消せません
+      </div>
+      <button onclick="confirmWithdrawal()" style="width:100%;background:none;border:1px solid #662222;color:#aa4444;padding:1rem;font-family:'IBM Plex Mono',monospace;font-size:0.7rem;letter-spacing:0.2em;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='#1a0000'" onmouseout="this.style.background='none'">退会手続きをする</button>
+    </div>
+
   </div>
 </div>
 
@@ -1365,7 +1405,7 @@ footer {
           <div style="font-size:0.85rem;color:#aaa;line-height:1.8;font-weight:300;" id="prof-bio"></div>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;border:1px solid #333;margin-bottom:2rem;">
+      <div id="prof-stats-all" style="display:grid;grid-template-columns:1fr 1fr 1fr;border:1px solid #333;margin-bottom:2rem;">
         <div style="padding:1.2rem 1.5rem;border-right:1px solid #333;">
           <span style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#aaa;letter-spacing:0.2em;display:block;margin-bottom:0.4rem;">投稿数</span>
           <span style="font-family:'Bebas Neue',sans-serif;font-size:2rem;display:block;" id="prof-posts">0</span>
@@ -1377,6 +1417,13 @@ footer {
         <div style="padding:1.2rem 1.5rem;">
           <span style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#aaa;letter-spacing:0.2em;display:block;margin-bottom:0.4rem;">売上合計</span>
           <span style="font-family:'Bebas Neue',sans-serif;font-size:2rem;display:block;" id="prof-revenue">¥0</span>
+        </div>
+      </div>
+      <!-- 他人閲覧時は投稿数のみ -->
+      <div id="prof-stats-other" style="display:none;grid-template-columns:1fr;border:1px solid #333;margin-bottom:2rem;">
+        <div style="padding:1.2rem 1.5rem;">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#aaa;letter-spacing:0.2em;display:block;margin-bottom:0.4rem;">投稿数</span>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:2rem;display:block;" id="prof-posts-other">0</span>
         </div>
       </div>
       <div style="margin-bottom:1.5rem;">
@@ -1582,22 +1629,12 @@ const SUPABASE_URL = 'https://gfpwasvmfjiwpyjlamth.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdmcHdhc3ZtZmppd3B5amxhbXRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4MjEyODEsImV4cCI6MjA4NzM5NzI4MX0._dWKmTSLJzZ6uNzwFk3fAj-qx4_zDe5zWB3qGhSdkcE';
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// PAY.JP 公開鍵（テスト環境）
+const PAYJP_PUBLIC_KEY = 'pk_test_b2a4edc097d6e07e88cb4f06';
+
 // --- AUTH ---
 let currentUser = null;
 let avatarCache = {}; // { name: avatarUrl } のキャッシュ
-
-const users = [
-  { id: 'u0', name: '朝日',    bio: 'BLACK BOX創始者', posts: 1, transfers: 0 },
-  { id: 'u1', name: 'ミヤモト', bio: 'SF・実験的な世界観が得意。1話は描けるが続きが思い浮かばないタイプ。', posts: 3, transfers: 2 },
-  { id: 'u2', name: '匿名',    bio: '', posts: 1, transfers: 1 },
-  { id: 'u3', name: 'カワハラ', bio: '日常系・不条理コメディ専門。絵は描けるがプロット力がない。', posts: 2, transfers: 1 },
-  { id: 'u4', name: 'タナカ K', bio: 'コメディ法廷もの。テンポ重視で書いている。', posts: 4, transfers: 3 },
-  { id: 'demo', name: 'あなた', bio: 'プロフィール未設定', posts: 0, transfers: 0 },
-];
-
-function getUserByName(name) {
-  return users.find(u => u.name === name) || { id: null, name, bio: '', posts: 0, transfers: 0 };
-}
 
 // --- WORKS ---
 let works = [];
@@ -1774,6 +1811,7 @@ function openSettings() {
     deleteBtn.style.display = 'none';
   }
 
+  switchSettingsTab('profile');
   document.getElementById('settings-overlay').classList.add('open');
 }
 
@@ -1853,6 +1891,40 @@ function previewAvatar(input) {
   document.getElementById('s-avatar-delete-btn').style.display = 'block';
 }
 
+function switchSettingsTab(tab) {
+  ['profile', 'account', 'danger'].forEach(t => {
+    document.getElementById(`settings-content-${t}`).style.display = t === tab ? 'block' : 'none';
+    const btn = document.getElementById(`settings-tab-${t}`);
+    btn.style.borderBottomColor = t === tab ? 'var(--white)' : 'transparent';
+    btn.style.color = t === tab ? 'var(--white)' : '#555';
+  });
+}
+
+async function updateEmail() {
+  const email = document.getElementById('s-email').value.trim();
+  if (!email) { toast('メールアドレスを入力してください'); return; }
+  const { error } = await db.auth.updateUser({ email });
+  if (error) { toast('変更失敗: ' + error.message); return; }
+  toast('確認メールを送信しました。メールを確認してください');
+  document.getElementById('s-email').value = '';
+}
+
+async function sendPasswordReset() {
+  const email = currentUser?.email;
+  if (!email) { toast('メールアドレスが取得できません'); return; }
+  const { error } = await db.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.href,
+  });
+  if (error) { toast('送信失敗: ' + error.message); return; }
+  toast('パスワード変更リンクを送信しました');
+}
+
+function confirmWithdrawal() {
+  if (!confirm('本当に退会しますか？\nこの操作は取り消せません。')) return;
+  toast('退会機能は現在準備中です');
+  // TODO: 退会処理の実装
+}
+
 function openLogin() {
   document.getElementById('login-overlay').classList.add('open');
 }
@@ -1903,7 +1975,7 @@ async function doSignup() {
 async function loadCurrentUser(user) {
   const { data } = await db.from('profiles').select('*').eq('id', user.id).single();
   if (data) {
-    currentUser = data;
+    currentUser = { ...data, email: user.email };
   }
   updateAuthUI();
 }
@@ -1957,6 +2029,11 @@ async function openProfile(authorName) {
   document.getElementById('prof-transfers').textContent = transferred;
   document.getElementById('prof-revenue').textContent = `¥${revenue.toLocaleString()}`;
   document.getElementById('prof-logout-btn').style.display = isMe ? 'block' : 'none';
+
+  // 本人なら全統計、他人なら投稿数のみ
+  document.getElementById('prof-stats-all').style.display = isMe ? 'grid' : 'none';
+  document.getElementById('prof-stats-other').style.display = isMe ? 'none' : 'grid';
+  document.getElementById('prof-posts-other').textContent = authorWorks.length;
 
   // タブ：本人のみ「作品管理」タブ表示
   const tabs = document.getElementById('prof-tabs');
@@ -2947,6 +3024,17 @@ async function init() {
   // セッション復元
   const { data: { session } } = await db.auth.getSession();
   if (session) await loadCurrentUser(session.user);
+
+  // パスワードリセットリンクから戻ってきた場合
+  db.auth.onAuthStateChange(async (event) => {
+    if (event === 'PASSWORD_RECOVERY') {
+      const newPassword = prompt('新しいパスワードを入力してください（6文字以上）');
+      if (!newPassword || newPassword.length < 6) { toast('パスワードは6文字以上にしてください'); return; }
+      const { error } = await db.auth.updateUser({ password: newPassword });
+      if (error) { toast('変更失敗: ' + error.message); return; }
+      toast('パスワードを変更しました');
+    }
+  });
 
   // プロフィール（アバター）を一括キャッシュ
   const { data: profilesData } = await db.from('profiles').select('name, avatar');
