@@ -1104,6 +1104,20 @@ footer {
 </head>
 <body>
 
+<!-- ローディング画面 -->
+<div id="loading-screen" style="position:fixed;inset:0;background:#0a0a0a;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.5rem;">
+  <div style="font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:0.3em;color:#fff;">BLACK BOX</div>
+  <div style="width:40px;height:2px;background:var(--border);position:relative;overflow:hidden;">
+    <div style="position:absolute;inset:0;background:#fff;animation:loading-bar 1.2s ease-in-out infinite;transform:translateX(-100%);"></div>
+  </div>
+</div>
+<style>
+@keyframes loading-bar {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+</style>
+
 <header>
   <a class="logo-wrap" href="#">
     <div class="logo-box"><div class="logo-box-inner"></div></div>
@@ -1158,9 +1172,36 @@ footer {
 <footer>
   <span class="footer-logo">BLACK BOX</span>
   <span class="footer-note">試作版 v0.1 — 未完作品の完全譲渡市場</span>
+  <div style="margin-top:1rem;display:flex;gap:1.5rem;justify-content:center;flex-wrap:wrap;">
+    <a href="#" onclick="openLegal('terms'); return false;" style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#aaa;letter-spacing:0.1em;text-decoration:none;">利用規約</a>
+    <a href="#" onclick="openLegal('privacy'); return false;" style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#aaa;letter-spacing:0.1em;text-decoration:none;">プライバシーポリシー</a>
+  </div>
 </footer>
 
-<!-- DETAIL MODAL -->
+<!-- CONFIRM DIALOG -->
+<div class="overlay" id="confirm-overlay" style="z-index:10000;">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-content" style="padding:2rem;">
+      <div id="confirm-title" style="font-family:'Noto Serif JP',serif;font-size:1.1rem;font-weight:700;margin-bottom:1rem;"></div>
+      <div id="confirm-message" style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:#aaa;line-height:2;letter-spacing:0.05em;margin-bottom:2rem;"></div>
+      <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+        <button id="confirm-cancel-btn" style="background:none;border:1px solid var(--border);color:#aaa;padding:0.7rem 1.5rem;font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.15em;cursor:pointer;">キャンセル</button>
+        <button id="confirm-ok-btn" style="background:var(--white);color:var(--black);border:none;padding:0.7rem 1.5rem;font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.15em;cursor:pointer;"></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LEGAL MODAL -->
+<div class="overlay" id="legal-overlay">
+  <div class="modal" style="max-width:680px;">
+    <div class="modal-top-bar">
+      <span class="modal-label" id="legal-title">利用規約</span>
+      <button class="modal-close" onclick="closeOverlay('legal-overlay')">✕</button>
+    </div>
+    <div class="modal-content" id="legal-body" style="font-size:0.85rem;line-height:2;color:#ccc;max-height:70vh;overflow-y:auto;"></div>
+  </div>
+</div>
 <div class="overlay" id="detail-overlay">
   <div class="modal">
     <div class="modal-top-bar">
@@ -1190,13 +1231,14 @@ footer {
         </div>
       </div>
       <div class="modal-acquire-bar">
-        <div>
+        <div style="display:none;">
           <div class="modal-price-big" id="d-price"></div>
           <div class="modal-price-sub">完全譲渡 — 続編・商用利用・再販すべて可</div>
         </div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#aaa;letter-spacing:0.05em;line-height:1.8;">続編・商用利用・再販すべて可<br>（テスト版のため無料で譲渡）</div>
         <div style="display:flex;flex-direction:column;gap:0.5rem;align-items:flex-end;">
           <button class="btn-acquire-main" id="d-read-btn" style="display:none;background:#222;color:#fff;border:1px solid #444;" onclick="openReaderFromDetail()">本文を読む →</button>
-          <button class="btn-acquire-main" id="d-acquire-btn">権利を取得する →</button>
+          <button class="btn-acquire-main" id="d-acquire-btn" onclick="acquireWork()">続きを書く →</button>
         </div>
       </div>
     </div>
@@ -1207,25 +1249,39 @@ footer {
 <div class="overlay" id="post-overlay">
   <div class="modal">
     <div class="modal-top-bar">
-      <span class="modal-label">新規投稿</span>
+      <span class="modal-label" id="f-modal-label">新規投稿</span>
       <button class="modal-close" onclick="closePost()">✕</button>
     </div>
     <div class="modal-content">
-      <div class="form-block">
-        <label class="form-lbl">タイトル <span class="req">*</span> <span id="f-title-count" style="float:right;color:#aaa;">0/40</span></label>
-        <input type="text" class="form-ctrl" id="f-title" placeholder="作品タイトル" maxlength="40" oninput="document.getElementById('f-title-count').textContent=this.value.length+'/40'">
-      </div>
-      <div class="form-row">
-        <div class="form-block">
-          <label class="form-lbl">形式 <span class="req">*</span></label>
-          <select class="form-ctrl" id="f-format">
-            <option value="manga">漫画</option>
-            <option value="novel">小説</option>
-          </select>
+
+      <!-- 続編モード：固定情報表示 -->
+      <div id="f-sequel-info" style="display:none;background:#111;border:1px solid #333;padding:1rem 1.2rem;margin-bottom:1.5rem;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#aaa;letter-spacing:0.15em;margin-bottom:0.6rem;">前話から引き継がれる情報（変更不可）</div>
+        <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+          <span id="f-sequel-format-badge" class="work-format-badge"></span>
+          <span id="f-sequel-title" style="font-family:'Noto Serif JP',serif;font-size:1rem;font-weight:700;"></span>
+          <span id="f-sequel-genre" style="font-family:'IBM Plex Mono',monospace;font-size:0.6rem;color:#aaa;"></span>
         </div>
+      </div>
+
+      <!-- 通常モード：タイトル・形式・ジャンル -->
+      <div id="f-normal-fields">
         <div class="form-block">
-          <label class="form-lbl">ジャンル</label>
-          <input type="text" class="form-ctrl" id="f-genre" placeholder="SF、ホラー、恋愛…">
+          <label class="form-lbl">タイトル <span class="req">*</span> <span id="f-title-count" style="float:right;color:#aaa;">0/40</span></label>
+          <input type="text" class="form-ctrl" id="f-title" placeholder="作品タイトル" maxlength="40" oninput="document.getElementById('f-title-count').textContent=this.value.length+'/40'">
+        </div>
+        <div class="form-row">
+          <div class="form-block">
+            <label class="form-lbl">形式 <span class="req">*</span></label>
+            <select class="form-ctrl" id="f-format">
+              <option value="manga">漫画</option>
+              <option value="novel">小説</option>
+            </select>
+          </div>
+          <div class="form-block">
+            <label class="form-lbl">ジャンル</label>
+            <input type="text" class="form-ctrl" id="f-genre" placeholder="SF、ホラー、恋愛…">
+          </div>
         </div>
       </div>
       <div class="form-block">
@@ -1243,8 +1299,9 @@ footer {
         <textarea class="form-ctrl" id="f-body" placeholder="ここに本文を入力..." style="min-height:240px;line-height:2;font-family:'Noto Serif JP',serif;font-size:0.85rem;resize:vertical;"></textarea>
       </div>
       <div class="form-block">
-        <label class="form-lbl">譲渡価格（¥）<span class="req">*</span></label>
-        <input type="number" class="form-ctrl" id="f-price" placeholder="例: 500" min="0">
+        <label class="form-lbl">譲渡価格（¥）</label>
+        <input type="hidden" id="f-price" value="0">
+        <div style="background:var(--dim);border:1px solid var(--border);padding:0.9rem 1rem;font-family:'IBM Plex Mono',monospace;font-size:0.6rem;color:#555;letter-spacing:0.1em;">テスト版のため設定できません</div>
       </div>
       <div style="display:flex;gap:0.75rem;margin-top:0.5rem;flex-wrap:wrap;">
         <button class="btn-submit" id="f-submit-btn" onclick="submitWork()" style="flex:1;min-width:120px;">投稿する →</button>
@@ -1489,14 +1546,18 @@ footer {
       <!-- あらすじ -->
       <div style="background:#111;border-left:2px solid var(--red);padding:1.2rem 1.5rem;font-size:0.85rem;line-height:2;color:#ccc;font-weight:300;margin-bottom:2rem;" id="ov-synopsis"></div>
 
-      <!-- 価格 -->
+      <!-- 価格（テスト版のため非表示） -->
       <div style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border);">
-        <div>
+        <div style="display:none;">
           <div style="font-family:'IBM Plex Mono',monospace;font-size:0.5rem;color:#aaa;letter-spacing:0.2em;margin-bottom:0.3rem;">完全譲渡価格</div>
           <div style="font-family:'Bebas Neue',sans-serif;font-size:2.2rem;line-height:1;" id="ov-price"></div>
           <div style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#aaa;margin-top:0.2rem;">続編・商用利用・再販すべて可</div>
         </div>
-        <button id="ov-read-btn" onclick="readFromOverview()" style="background:var(--white);color:var(--black);border:none;padding:0.9rem 2rem;font-family:'IBM Plex Mono',monospace;font-size:0.7rem;letter-spacing:0.15em;cursor:pointer;transition:opacity 0.2s;white-space:nowrap;">作品を読む →</button>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#aaa;letter-spacing:0.05em;line-height:1.8;">続編・商用利用・再販すべて可<br>（テスト版のため無料で譲渡）</div>
+        <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
+          <button id="ov-acquire-btn" onclick="acquireAndWrite()" style="background:var(--white);color:var(--black);border:none;padding:0.9rem 2rem;font-family:'IBM Plex Mono',monospace;font-size:0.7rem;letter-spacing:0.15em;cursor:pointer;transition:opacity 0.2s;white-space:nowrap;">続きを書く →</button>
+          <button id="ov-read-btn" onclick="readFromOverview()" style="background:none;color:var(--white);border:1px solid var(--border);padding:0.9rem 2rem;font-family:'IBM Plex Mono',monospace;font-size:0.7rem;letter-spacing:0.15em;cursor:pointer;transition:all 0.2s;white-space:nowrap;">作品を読む →</button>
+        </div>
       </div>
 
       <!-- いいね・コメント数 -->
@@ -1584,7 +1645,9 @@ footer {
       </div>
       <div class="form-block">
         <label class="form-lbl">譲渡価格（¥）</label>
-        <input type="number" class="form-ctrl" id="e-price" min="0">
+        <div id="e-price-display" style="display:none;"></div>
+        <input type="hidden" id="e-price">
+        <div style="background:var(--dim);border:1px solid var(--border);padding:0.9rem 1rem;font-family:'IBM Plex Mono',monospace;font-size:0.6rem;color:#555;letter-spacing:0.1em;">テスト版のため設定できません</div>
       </div>
 
       <!-- 小説本文編集 -->
@@ -1630,7 +1693,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // PAY.JP 公開鍵（テスト環境）
-const PAYJP_PUBLIC_KEY = 'pk_test_b2a4edc097d6e07e88cb4f06';
+const PAYJP_PUBLIC_KEY = 'ここにpk_test_...を貼り付ける';
 
 // --- AUTH ---
 let currentUser = null;
@@ -1733,7 +1796,7 @@ function render() {
         </div>
       </div>
       <div class="work-right">
-        <div class="work-price">
+        <div class="work-price" style="display:none;">
           <span class="work-price-num">${w.price === 0 ? '¥0' : '¥' + w.price.toLocaleString()}</span>
           <span class="work-price-label">完全譲渡</span>
         </div>
@@ -2197,14 +2260,30 @@ function openDetail(id) {
   document.getElementById('d-price').style.color = 'var(--white)';
 
   const btn = document.getElementById('d-acquire-btn');
-  if (!currentUser) {
-    btn.textContent = 'ログインが必要です';
+  if (w.status === 'sold') {
+    btn.textContent = '譲渡済み';
+    btn.style.background = '#222';
+    btn.style.color = '#555';
+    btn.style.cursor = 'default';
+    btn.onclick = null;
+  } else if (!currentUser) {
+    btn.textContent = 'ログインして続きを書く';
     btn.style.background = '#333';
     btn.style.color = '#666';
+    btn.style.cursor = 'pointer';
+    btn.onclick = () => { closeOverlay('detail-overlay'); openLogin(); };
+  } else if (w.author_id === currentUser.id) {
+    btn.textContent = '自分の作品';
+    btn.style.background = '#222';
+    btn.style.color = '#555';
+    btn.style.cursor = 'default';
+    btn.onclick = null;
   } else {
-    btn.textContent = w.price === 0 ? '無料で権利を取得 →' : '権利を取得する →';
+    btn.textContent = '続きを書く →';
     btn.style.background = '';
     btn.style.color = '';
+    btn.style.cursor = 'pointer';
+    btn.onclick = acquireAndWrite;
   }
 
   document.getElementById('d-read-btn').style.display = w.body ? 'block' : 'none';
@@ -2217,15 +2296,7 @@ function openReaderFromDetail() {
   openReader(currentId);
 }
 
-document.getElementById('d-acquire-btn').addEventListener('click', () => {
-  if (!currentUser) { toast('ログインが必要です'); return; }
-  const w = works.find(x => x.id === currentId);
-  if (!w) return;
-  w.status = 'sold';
-  closeOverlay('detail-overlay');
-  render();
-  toast(`「${w.title}」の権利を取得しました`);
-});
+
 
 // --- POST ---
 function openPost() {
@@ -2294,12 +2365,112 @@ function renderMangaPreview() {
 
 function closePost() {
   closeOverlay('post-overlay');
-  // ファイル選択をリセット
   mangaFileOrder = [];
   document.getElementById('f-manga-files').value = '';
   document.getElementById('f-manga-preview').innerHTML = '';
   document.getElementById('f-manga-hint').style.display = 'none';
+  // 続編モードをリセット
+  if (sequelSourceWork) {
+    sequelSourceWork = null;
+    document.getElementById('f-modal-label').textContent = '新規投稿';
+    document.getElementById('f-normal-fields').style.display = 'block';
+    document.getElementById('f-sequel-info').style.display = 'none';
+  }
 }
+
+// カスタム確認ダイアログ
+function showConfirm(title, message, okLabel = '確認') {
+  return new Promise(resolve => {
+    document.getElementById('confirm-title').textContent = title;
+    document.getElementById('confirm-message').innerHTML = message;
+    document.getElementById('confirm-ok-btn').textContent = okLabel;
+    document.getElementById('confirm-overlay').classList.add('open');
+
+    const okBtn = document.getElementById('confirm-ok-btn');
+    const cancelBtn = document.getElementById('confirm-cancel-btn');
+
+    const cleanup = (result) => {
+      document.getElementById('confirm-overlay').classList.remove('open');
+      okBtn.replaceWith(okBtn.cloneNode(true));
+      cancelBtn.replaceWith(cancelBtn.cloneNode(true));
+      resolve(result);
+    };
+
+    document.getElementById('confirm-ok-btn').onclick = () => cleanup(true);
+    document.getElementById('confirm-cancel-btn').onclick = () => cleanup(false);
+  });
+}
+
+function openLegal(type) {
+  const isTerms = type === 'terms';
+  document.getElementById('legal-title').textContent = isTerms ? '利用規約' : 'プライバシーポリシー';
+  document.getElementById('legal-body').innerHTML = isTerms ? TERMS_HTML : PRIVACY_HTML;
+  document.getElementById('legal-overlay').classList.add('open');
+}
+
+const TERMS_HTML = `
+<p style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#aaa;margin-bottom:2rem;">最終更新日：2026年2月27日（暫定版）</p>
+
+<h3 style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;color:#fff;margin:1.5rem 0 0.5rem;">第1条（適用）</h3>
+<p>本利用規約（以下「本規約」）は、BLACK BOX（以下「本サービス」）の利用条件を定めるものです。ユーザーの皆さまには、本規約に従って本サービスをご利用いただきます。</p>
+
+<h3 style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;color:#fff;margin:1.5rem 0 0.5rem;">第2条（サービスの概要）</h3>
+<p>本サービスは、未完成の漫画・小説作品の著作権を第三者に完全譲渡するためのプラットフォームです。作品の投稿・閲覧・購入（著作権譲受）の場を提供します。</p>
+
+<h3 style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;color:#fff;margin:1.5rem 0 0.5rem;">第3条（著作権の譲渡）</h3>
+<p>1. 投稿者（譲渡人）は、決済完了時点をもって、当該作品に関するすべての著作権（著作財産権）を購入者（譲受人）に完全に譲渡するものとします。</p>
+<p>2. 著作者人格権は譲渡できないものとされていますが、投稿者は購入者に対して著作者人格権を行使しないものとします。</p>
+<p>3. 決済完了後、投稿者は当該作品に対する一切の権利を主張できません。</p>
+<p>4. 購入者は譲受した著作権について、続編制作・商用利用・再販売を含むすべての利用が可能です。</p>
+
+<h3 style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;color:#fff;margin:1.5rem 0 0.5rem;">第4条（投稿者の義務）</h3>
+<p>1. 投稿者は、投稿する作品が自己の創作物であり、第三者の権利を侵害していないことを保証します。</p>
+<p>2. 第三者のキャラクターや著作物を無断使用した作品の投稿は禁止します。</p>
+<p>3. 投稿者は第三者から権利侵害の申し立てがあった場合、自己の責任と費用で対処するものとします。</p>
+
+<h3 style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;color:#fff;margin:1.5rem 0 0.5rem;">第5条（禁止事項）</h3>
+<p>以下の行為を禁止します。</p>
+<p>・第三者の著作権・商標権等を侵害するコンテンツの投稿<br>・わいせつ・暴力的・差別的なコンテンツの投稿<br>・虚偽の情報の登録・投稿<br>・本サービスの運営を妨害する行為<br>・その他、運営が不適切と判断する行為</p>
+
+<h3 style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;color:#fff;margin:1.5rem 0 0.5rem;">第6条（手数料）</h3>
+<p>本サービスは、作品の譲渡成立時に取引金額の一定割合をプラットフォーム手数料として徴収します。手数料率は別途定めるものとします。</p>
+
+<h3 style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;color:#fff;margin:1.5rem 0 0.5rem;">第7条（免責事項）</h3>
+<p>1. 運営は、本サービスを通じた取引において生じた損害について、故意または重過失がある場合を除き責任を負いません。</p>
+<p>2. 投稿者と購入者の間のトラブルについて、運営は仲介の義務を負いません。</p>
+<p>3. 本サービスは現在テスト運用中であり、予告なく内容を変更・停止する場合があります。</p>
+
+<h3 style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;color:#fff;margin:1.5rem 0 0.5rem;">第8条（規約の変更）</h3>
+<p>運営は必要に応じて本規約を変更できるものとします。変更後の規約はサービス上に掲示した時点から効力を持ちます。</p>
+
+<h3 style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;color:#fff;margin:1.5rem 0 0.5rem;">第9条（準拠法・管轄）</h3>
+<p>本規約は日本法に準拠し、紛争が生じた場合は運営者の所在地を管轄する裁判所を専属的合意管轄とします。</p>
+`;
+
+const PRIVACY_HTML = `
+<p style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#aaa;margin-bottom:2rem;">最終更新日：2026年2月27日（暫定版）</p>
+
+<h3 style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;color:#fff;margin:1.5rem 0 0.5rem;">第1条（取得する情報）</h3>
+<p>本サービスでは以下の情報を取得します。</p>
+<p>・メールアドレス（アカウント登録時）<br>・ペンネーム・自己紹介文（任意入力）<br>・プロフィール画像（任意アップロード）<br>・投稿した作品データ<br>・サービス利用履歴</p>
+
+<h3 style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;color:#fff;margin:1.5rem 0 0.5rem;">第2条（利用目的）</h3>
+<p>取得した情報は以下の目的で使用します。</p>
+<p>・サービスの提供・運営<br>・ユーザーへの通知・連絡<br>・不正利用の防止<br>・サービスの改善</p>
+
+<h3 style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;color:#fff;margin:1.5rem 0 0.5rem;">第3条（第三者提供）</h3>
+<p>以下の場合を除き、取得した情報を第三者に提供しません。</p>
+<p>・ユーザー本人の同意がある場合<br>・法令に基づく場合<br>・決済処理のためにPAY.JPに提供する場合</p>
+
+<h3 style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;color:#fff;margin:1.5rem 0 0.5rem;">第4条（データの管理）</h3>
+<p>本サービスはSupabase（米国）のインフラを利用してデータを管理しています。適切なセキュリティ対策を講じていますが、完全な安全性を保証するものではありません。</p>
+
+<h3 style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;color:#fff;margin:1.5rem 0 0.5rem;">第5条（開示・削除）</h3>
+<p>ユーザーは自己の情報の開示・訂正・削除を運営に請求できます。退会時にはアカウント情報を削除します。</p>
+
+<h3 style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;color:#fff;margin:1.5rem 0 0.5rem;">第6条（お問い合わせ）</h3>
+<p>プライバシーに関するお問い合わせは、サービス内のお問い合わせ窓口までご連絡ください。</p>
+`;
 
 function closeOverlay(id) {
   document.getElementById(id).classList.remove('open');
@@ -2320,14 +2491,21 @@ async function submitWork() {
   const price    = parseInt(document.getElementById('f-price').value);
   const format   = document.getElementById('f-format').value;
 
-  if (!title || !synopsis || isNaN(price) || price < 0) {
-    toast('タイトル、あらすじ、価格を入力してください');
+  if (!title || !synopsis) {
+    toast('タイトルとあらすじを入力してください');
     return;
   }
 
-  // 新規投稿は常に新しいシリーズの1話目
-  const seriesId = `series-${Date.now()}`;
-  const episode  = 1;
+  // 続編モードならseriesIdを引き継ぎ、episodeをインクリメント
+  let seriesId, episode;
+  if (sequelSourceWork) {
+    seriesId = sequelSourceWork.seriesId || sequelSourceWork.series_id;
+    const prevEpisodes = works.filter(w => w.seriesId === seriesId || w.series_id === seriesId);
+    episode = prevEpisodes.length + 1;
+  } else {
+    seriesId = `series-${Date.now()}`;
+    episode  = 1;
+  }
 
   // ローディング表示
   const submitBtn  = document.getElementById('f-submit-btn');
@@ -2416,6 +2594,10 @@ async function submitWork() {
 
   hideLoading();
   closeOverlay('post-overlay');
+  sequelSourceWork = null;
+  document.getElementById('f-modal-label').textContent = '新規投稿';
+  document.getElementById('f-normal-fields').style.display = 'block';
+  document.getElementById('f-sequel-info').style.display = 'none';
   window.scrollTo({ top: 0, behavior: 'smooth' });
   render();
   toast(`「${title}」を投稿しました`);
@@ -2639,6 +2821,35 @@ function openOverview(id) {
   }
 
   updateOverviewReactions(w);
+
+  // 取得ボタンの状態制御
+  const ovAcquireBtn = document.getElementById('ov-acquire-btn');
+  if (w.status === 'sold') {
+    ovAcquireBtn.textContent = '譲渡済み';
+    ovAcquireBtn.style.background = '#222';
+    ovAcquireBtn.style.color = '#555';
+    ovAcquireBtn.style.cursor = 'default';
+    ovAcquireBtn.onclick = null;
+  } else if (!currentUser) {
+    ovAcquireBtn.textContent = 'ログインして続きを書く';
+    ovAcquireBtn.style.background = '#333';
+    ovAcquireBtn.style.color = '#888';
+    ovAcquireBtn.style.cursor = 'pointer';
+    ovAcquireBtn.onclick = () => { closeOverlay('overview-overlay'); openLogin(); };
+  } else if (w.author_id === currentUser.id) {
+    ovAcquireBtn.textContent = '自分の作品';
+    ovAcquireBtn.style.background = '#222';
+    ovAcquireBtn.style.color = '#555';
+    ovAcquireBtn.style.cursor = 'default';
+    ovAcquireBtn.onclick = null;
+  } else {
+    ovAcquireBtn.textContent = '続きを書く →';
+    ovAcquireBtn.style.background = 'var(--white)';
+    ovAcquireBtn.style.color = 'var(--black)';
+    ovAcquireBtn.style.cursor = 'pointer';
+    ovAcquireBtn.onclick = acquireAndWrite;
+  }
+
   document.getElementById('overview-overlay').classList.add('open');
 }
 
@@ -2727,6 +2938,41 @@ async function deleteComment(commentId) {
 }
 
 // 概要モーダルから読書ページへ
+async function acquireWork() {
+  if (!currentUser) { toast('ログインが必要です'); return; }
+  const w = works.find(x => x.id === currentId);
+  if (!w) return;
+  if (w.status === 'sold') { toast('この作品はすでに譲渡済みです'); return; }
+  if (w.author_id === currentUser.id) { toast('自分の作品は取得できません'); return; }
+
+  const ok = await showConfirm(
+    '著作権を取得する',
+    `「${w.title}」の著作権を取得しますか？<br>続編・商用利用・再販すべて可能になります。この操作は取り消せません。`,
+    '取得する →'
+  );
+  if (!ok) return;
+
+  const { error } = await db.from('works')
+    .update({ status: 'sold', buyer_id: currentUser.id, acquired_at: new Date().toISOString() })
+    .eq('id', w.id);
+
+  if (error) { toast('取得に失敗しました'); return; }
+
+  // ローカルも更新
+  w.status = 'sold';
+  w.buyer_id = currentUser.id;
+
+  // 元の作者の譲渡実績を+1
+  await db.from('profiles')
+    .update({ transfers: (await db.from('profiles').select('transfers').eq('id', w.author_id).single()).data.transfers + 1 })
+    .eq('id', w.author_id);
+
+  toast('著作権を取得しました！続きを自由に書いてください');
+  closeOverlay('detail-overlay');
+  closeOverlay('overview-overlay');
+  render();
+}
+
 function readFromOverview() {
   closeOverlay('overview-overlay');
   directRead(currentId);
@@ -2861,18 +3107,89 @@ function openReaderFromDetail() {
 }
 
 // 続きを書く → 権利取得
-function acquireAndWrite() {
+let sequelSourceWork = null; // 続編元の作品
+
+async function acquireAndWrite() {
   if (!currentUser) { toast('ログインが必要です'); return; }
   const w = works.find(x => x.id === currentId);
   if (!w) return;
+  if (w.status === 'sold') { toast('この作品はすでに譲渡済みです'); return; }
+  if (w.author_id === currentUser.id) { toast('自分の作品の続きは書けません'); return; }
+
+  const ok = await showConfirm(
+    '続編を書く権利を取得する',
+    `「${w.title}」の権利を取得しますか？<br>取得後は続きを自由に書けます。この操作は取り消せません。`,
+    '取得して続きを書く →'
+  );
+  if (!ok) return;
+
+  // Supabaseを更新
+  const { error } = await db.from('works')
+    .update({ status: 'sold', buyer_id: currentUser.id, acquired_at: new Date().toISOString() })
+    .eq('id', w.id);
+  if (error) { toast('取得に失敗しました'); return; }
+
+  // 前話作者の譲渡実績を+1
+  const { data: authorProfile } = await db.from('profiles').select('transfers').eq('id', w.author_id).single();
+  if (authorProfile) {
+    await db.from('profiles').update({ transfers: authorProfile.transfers + 1 }).eq('id', w.author_id);
+  }
+
+  // ローカル更新
   w.status = 'sold';
+  w.buyer_id = currentUser.id;
+
+  // 続編フォームを開く
+  sequelSourceWork = w;
   closeReader();
   closePage('detail-page');
+  closeOverlay('overview-overlay');
   render();
-  toast(`「${w.title}」の権利を取得しました。続きを書いてください！`);
+  openSequelPost(w);
+  toast(`「${w.title}」の権利を取得しました`);
+}
+
+function openSequelPost(w) {
+  // フォームをリセット（closePostは呼ばない）
+  mangaFileOrder = [];
+  document.getElementById('f-manga-files').value = '';
+  document.getElementById('f-manga-preview').innerHTML = '';
+  document.getElementById('f-manga-hint').style.display = 'none';
+  ['f-title','f-genre','f-synopsis','f-body'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  document.getElementById('f-synopsis-count').textContent = '0/160';
+
+  // 続編モードのUI
+  document.getElementById('f-modal-label').textContent = '続編を投稿';
+  document.getElementById('f-normal-fields').style.display = 'none';
+  document.getElementById('f-sequel-info').style.display = 'block';
+
+  // 固定情報を表示
+  const badge = document.getElementById('f-sequel-format-badge');
+  badge.textContent = w.format === 'manga' ? '漫画' : '小説';
+  badge.className = `work-format-badge ${w.format}`;
+  document.getElementById('f-sequel-title').textContent = w.title;
+  document.getElementById('f-sequel-genre').textContent = w.genre;
+
+  // 隠しフィールドにセット
+  document.getElementById('f-title').value  = w.title;
+  document.getElementById('f-genre').value  = w.genre;
+  document.getElementById('f-format').value = w.format;
+
+  // 形式に合わせてブロック表示
+  const mangaBlock = document.getElementById('f-manga-block');
+  const novelBlock = document.getElementById('f-novel-block');
+  mangaBlock.style.display = w.format === 'manga' ? 'block' : 'none';
+  novelBlock.style.display = w.format === 'novel' ? 'block' : 'none';
+
+  document.getElementById('post-overlay').classList.add('open');
 }
 
 function acquireFromPage() {
+  acquireAndWrite();
+}
+
+function acquireFromCard(id) {
+  currentId = id;
   acquireAndWrite();
 }
 
@@ -2899,7 +3216,8 @@ function openEditOverlay() {
   document.getElementById('e-format').value  = w.format;
   document.getElementById('e-genre').value   = w.genre;
   document.getElementById('e-synopsis').value = w.synopsis;
-  document.getElementById('e-price').value   = w.price;
+  document.getElementById('e-price').value = w.price;
+  document.getElementById('e-price-display').textContent = `¥${w.price.toLocaleString()}`;
 
   const novelBlock = document.getElementById('e-novel-block');
   const mangaBlock = document.getElementById('e-manga-block');
@@ -3026,18 +3344,25 @@ async function init() {
   if (session) await loadCurrentUser(session.user);
 
   // パスワードリセットリンクから戻ってきた場合
-  db.auth.onAuthStateChange(async (event) => {
+  db.auth.onAuthStateChange(async (event, session) => {
     if (event === 'PASSWORD_RECOVERY') {
       const newPassword = prompt('新しいパスワードを入力してください（6文字以上）');
       if (!newPassword || newPassword.length < 6) { toast('パスワードは6文字以上にしてください'); return; }
       const { error } = await db.auth.updateUser({ password: newPassword });
       if (error) { toast('変更失敗: ' + error.message); return; }
       toast('パスワードを変更しました');
+    } else if (event === 'SIGNED_IN' && session && !currentUser) {
+      await loadCurrentUser(session.user);
+      render();
+    } else if (event === 'SIGNED_OUT') {
+      currentUser = null;
+      updateAuthUI();
+      render();
     }
   });
 
   // プロフィール（アバター）を一括キャッシュ
-  const { data: profilesData } = await db.from('profiles').select('name, avatar');
+  const { data: profilesData } = await db.from('profiles').select('name, avatar_url');
   if (profilesData) {
     profilesData.forEach(p => { avatarCache[p.name] = p.avatar_url || null; });
   }
@@ -3065,6 +3390,12 @@ async function init() {
 
   updateAuthUI();
   render();
+
+  // ローディング画面をフェードアウト
+  const loading = document.getElementById('loading-screen');
+  loading.style.transition = 'opacity 0.4s';
+  loading.style.opacity = '0';
+  setTimeout(() => loading.style.display = 'none', 400);
 }
 
 init();
