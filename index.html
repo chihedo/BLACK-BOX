@@ -1130,8 +1130,22 @@ footer {
     <div class="nav-user-wrap" id="nav-user-wrap">
       <a href="#" id="nav-auth-btn" class="nav-post" onclick="handleAuthClick(event)">ログイン</a>
       <div class="nav-dropdown" id="nav-dropdown">
-        <button onclick="goToMyProfile()">マイプロフィール</button>
-        <button onclick="openSettings()">アカウント設定</button>
+        <button onclick="toggleNavSubmenu(event, 'profile-submenu', 'profile-submenu-arrow')" style="display:flex;align-items:center;justify-content:space-between;">マイプロフィール <span id="profile-submenu-arrow" style="font-size:0.6rem;">▶</span></button>
+        <div id="profile-submenu" style="display:none;flex-direction:column;">
+          <button onclick="closeNavDropdown(); openProfile(currentUser.name);" style="padding-left:2rem;font-size:0.6rem;color:#aaa;">プロフィール</button>
+          <button onclick="closeNavDropdown(); openManageOverlay();" style="padding-left:2rem;font-size:0.6rem;color:#aaa;">作品管理</button>
+        </div>
+        <button onclick="toggleNavSubmenu(event, 'account-submenu', 'account-submenu-arrow')" style="display:flex;align-items:center;justify-content:space-between;">アカウント設定 <span id="account-submenu-arrow" style="font-size:0.6rem;">▶</span></button>
+        <div id="account-submenu" style="display:none;flex-direction:column;">
+          <button onclick="closeNavDropdown(); openSettings();" style="padding-left:2rem;font-size:0.6rem;color:#aaa;">メール・パスワード</button>
+          <button onclick="closeNavDropdown(); openInquiry();" style="padding-left:2rem;font-size:0.6rem;color:#aaa;">お問い合わせ</button>
+          <button onclick="closeNavDropdown(); document.getElementById('withdrawal-overlay').classList.add('open');" style="padding-left:2rem;font-size:0.6rem;color:#aa4444;">退会</button>
+        </div>
+        <button onclick="toggleNavSubmenu(event, 'legal-submenu', 'legal-submenu-arrow')" style="display:flex;align-items:center;justify-content:space-between;">規約・ポリシー <span id="legal-submenu-arrow" style="font-size:0.6rem;">▶</span></button>
+        <div id="legal-submenu" style="display:none;flex-direction:column;">
+          <button onclick="closeNavDropdown(); openLegal('terms');" style="padding-left:2rem;font-size:0.6rem;color:#aaa;">利用規約</button>
+          <button onclick="closeNavDropdown(); openLegal('privacy');" style="padding-left:2rem;font-size:0.6rem;color:#aaa;">プライバシーポリシー</button>
+        </div>
         <button onclick="doLogout()">ログアウト</button>
       </div>
     </div>
@@ -1141,7 +1155,7 @@ footer {
 <!-- HERO -->
 <section class="hero" id="top">
   <div class="hero-bg-text">BB</div>
-  <div class="hero-eyebrow">未完作品の完全譲渡市場</div>
+  <div class="hero-eyebrow">未完作品の数珠つなぎ市場</div>
   <h1 class="hero-h1">
     描いた。
     <span class="line2">続きは</span>
@@ -1149,7 +1163,7 @@ footer {
   </h1>
   <p class="hero-body">
     0→1を作れるが続けられない作家と、1→100を描けるが始められない作家をつなぐ。
-    作品の権利を完全譲渡し、次のページを誰かに委ねる場所。
+    作品の続きを書く権利を手放し、次のページを誰かに委ねる場所。
   </p>
   <div class="hero-actions">
     <a href="#works" class="btn-white">
@@ -1171,10 +1185,11 @@ footer {
 
 <footer>
   <span class="footer-logo">BLACK BOX</span>
-  <span class="footer-note">試作版 v0.1 — 未完作品の完全譲渡市場</span>
+  <span class="footer-note">試作版 v0.1 — 未完作品の数珠つなぎ市場</span>
   <div style="margin-top:1rem;display:flex;gap:1.5rem;justify-content:center;flex-wrap:wrap;">
     <a href="#" onclick="openLegal('terms'); return false;" style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#aaa;letter-spacing:0.1em;text-decoration:none;">利用規約</a>
     <a href="#" onclick="openLegal('privacy'); return false;" style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#aaa;letter-spacing:0.1em;text-decoration:none;">プライバシーポリシー</a>
+    <a href="#" onclick="openInquiry(); return false;" style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#aaa;letter-spacing:0.1em;text-decoration:none;">お問い合わせ</a>
   </div>
 </footer>
 
@@ -1182,12 +1197,47 @@ footer {
 <div class="overlay" id="confirm-overlay" style="z-index:10000;">
   <div class="modal" style="max-width:420px;">
     <div class="modal-content" style="padding:2rem;">
-      <div id="confirm-title" style="font-family:'Noto Serif JP',serif;font-size:1.1rem;font-weight:700;margin-bottom:1rem;"></div>
-      <div id="confirm-message" style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:#aaa;line-height:2;letter-spacing:0.05em;margin-bottom:2rem;"></div>
-      <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+      <div id="confirm-title" style="font-family:'Noto Serif JP',serif;font-size:1.1rem;font-weight:700;margin-bottom:1rem;text-align:center;"></div>
+      <div id="confirm-message" style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:#aaa;line-height:2;letter-spacing:0.05em;margin-bottom:2rem;text-align:center;"></div>
+      <div style="display:flex;gap:0.75rem;justify-content:center;">
         <button id="confirm-cancel-btn" style="background:none;border:1px solid var(--border);color:#aaa;padding:0.7rem 1.5rem;font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.15em;cursor:pointer;">キャンセル</button>
-        <button id="confirm-ok-btn" style="background:var(--white);color:var(--black);border:none;padding:0.7rem 1.5rem;font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.15em;cursor:pointer;"></button>
+        <button id="confirm-ok-btn" style="background:var(--white);color:var(--black);border:none;padding:0.7rem 1.5rem;font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.15em;cursor:pointer;transition:background 0.2s,color 0.2s;" onmouseover="this.dataset.danger==='true'&&(this.style.background='#cc2222',this.style.color='#fff')" onmouseout="this.dataset.danger==='true'&&(this.style.background='var(--white)',this.style.color='var(--black)')"></button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- INQUIRY MODAL -->
+<div class="overlay" id="inquiry-overlay">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-top-bar">
+      <span class="modal-label">お問い合わせ</span>
+      <button class="modal-close" onclick="closeOverlay('inquiry-overlay')">✕</button>
+    </div>
+    <div class="modal-content">
+      <div class="form-block">
+        <label class="form-lbl">お名前 <span class="req">*</span></label>
+        <input type="text" class="form-ctrl" id="iq-name" placeholder="例：山田太郎">
+      </div>
+      <div class="form-block">
+        <label class="form-lbl">メールアドレス <span class="req">*</span></label>
+        <input type="email" class="form-ctrl" id="iq-email" placeholder="例：example@email.com">
+      </div>
+      <div class="form-block">
+        <label class="form-lbl">種別</label>
+        <select class="form-ctrl" id="iq-category">
+          <option value="">選択してください</option>
+          <option value="bug">不具合の報告</option>
+          <option value="account">アカウントについて</option>
+          <option value="content">コンテンツについて</option>
+          <option value="other">その他</option>
+        </select>
+      </div>
+      <div class="form-block">
+        <label class="form-lbl">お問い合わせ内容 <span class="req">*</span></label>
+        <textarea class="form-ctrl" id="iq-body" placeholder="お問い合わせ内容をご記入ください" style="min-height:140px;resize:vertical;line-height:2;"></textarea>
+      </div>
+      <button class="btn-submit" onclick="submitInquiry()" style="width:100%;">送信する →</button>
     </div>
   </div>
 </div>
@@ -1233,9 +1283,9 @@ footer {
       <div class="modal-acquire-bar">
         <div style="display:none;">
           <div class="modal-price-big" id="d-price"></div>
-          <div class="modal-price-sub">完全譲渡 — 続編・商用利用・再販すべて可</div>
+          <div class="modal-price-sub">続きを書く権利を渡す</div>
         </div>
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#aaa;letter-spacing:0.05em;line-height:1.8;">続編・商用利用・再販すべて可<br>（テスト版のため無料で譲渡）</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#aaa;letter-spacing:0.05em;line-height:1.8;">続きを書く権利を渡す<br>（テスト版のため無料）</div>
         <div style="display:flex;flex-direction:column;gap:0.5rem;align-items:flex-end;">
           <button class="btn-acquire-main" id="d-read-btn" style="display:none;background:#222;color:#fff;border:1px solid #444;" onclick="openReaderFromDetail()">本文を読む →</button>
           <button class="btn-acquire-main" id="d-acquire-btn" onclick="acquireWork()">続きを書く →</button>
@@ -1299,7 +1349,7 @@ footer {
         <textarea class="form-ctrl" id="f-body" placeholder="ここに本文を入力..." style="min-height:240px;line-height:2;font-family:'Noto Serif JP',serif;font-size:0.85rem;resize:vertical;"></textarea>
       </div>
       <div class="form-block">
-        <label class="form-lbl">譲渡価格（¥）</label>
+        <label class="form-lbl">継承価格（¥）</label>
         <input type="hidden" id="f-price" value="0">
         <div style="background:var(--dim);border:1px solid var(--border);padding:0.9rem 1rem;font-family:'IBM Plex Mono',monospace;font-size:0.6rem;color:#555;letter-spacing:0.1em;">テスト版のため設定できません</div>
       </div>
@@ -1319,49 +1369,14 @@ footer {
   </div>
 </div>
 
-<!-- SETTINGS MODAL -->
+<!-- ACCOUNT MODAL -->
 <div class="overlay" id="settings-overlay">
   <div class="modal">
     <div class="modal-top-bar">
-      <span class="modal-label">アカウント設定</span>
+      <span class="modal-label">メール・パスワード</span>
       <button class="modal-close" onclick="closeOverlay('settings-overlay')">✕</button>
     </div>
-
-    <!-- タブ -->
-    <div style="display:flex;border-bottom:1px solid var(--border);">
-      <button onclick="switchSettingsTab('profile')" id="settings-tab-profile" style="flex:1;padding:0.8rem;background:#111;border:none;border-bottom:2px solid var(--white);color:var(--white);font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.15em;cursor:pointer;">プロフィール</button>
-      <button onclick="switchSettingsTab('account')" id="settings-tab-account" style="flex:1;padding:0.8rem;background:#111;border:none;border-bottom:2px solid transparent;color:#555;font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.15em;cursor:pointer;">アカウント</button>
-      <button onclick="switchSettingsTab('danger')" id="settings-tab-danger" style="flex:1;padding:0.8rem;background:#111;border:none;border-bottom:2px solid transparent;color:#555;font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.15em;cursor:pointer;">退会</button>
-    </div>
-
-    <!-- プロフィールタブ -->
-    <div id="settings-content-profile" class="modal-content">
-      <div class="form-block" style="display:flex;align-items:center;gap:1.5rem;margin-bottom:1.5rem;">
-        <div id="s-avatar-preview" style="width:64px;height:64px;border-radius:50%;background:#222;border:1px solid #333;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-        </div>
-        <div>
-          <label class="form-lbl">プロフィール画像</label>
-          <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-            <input type="file" id="s-avatar-file" accept="image/*" style="display:none;" onchange="previewAvatar(this)">
-            <button onclick="document.getElementById('s-avatar-file').click()" style="background:none;border:1px solid var(--border);color:#aaa;padding:0.4rem 1rem;font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.1em;cursor:pointer;">画像を選択</button>
-            <button id="s-avatar-delete-btn" onclick="deleteAvatar()" style="display:none;background:none;border:1px solid #662222;color:#aa4444;padding:0.4rem 1rem;font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.1em;cursor:pointer;">削除</button>
-          </div>
-        </div>
-      </div>
-      <div class="form-block">
-        <label class="form-lbl">ペンネーム</label>
-        <input type="text" class="form-ctrl" id="s-name" placeholder="名前">
-      </div>
-      <div class="form-block">
-        <label class="form-lbl">自己紹介</label>
-        <textarea class="form-ctrl" id="s-bio" placeholder="一言プロフィール" style="height:100px;"></textarea>
-      </div>
-      <button class="btn-submit" onclick="saveSettings()">保存する →</button>
-    </div>
-
-    <!-- アカウントタブ -->
-    <div id="settings-content-account" class="modal-content" style="display:none;">
+    <div class="modal-content">
       <div class="form-block">
         <label class="form-lbl">メールアドレス</label>
         <input type="email" class="form-ctrl" id="s-email" placeholder="new@email.com">
@@ -1377,9 +1392,17 @@ footer {
         <button class="btn-submit" onclick="sendPasswordReset()" style="width:100%;">変更リンクを送信 →</button>
       </div>
     </div>
+  </div>
+</div>
 
-    <!-- 退会タブ -->
-    <div id="settings-content-danger" class="modal-content" style="display:none;">
+<!-- WITHDRAWAL MODAL -->
+<div class="overlay" id="withdrawal-overlay">
+  <div class="modal">
+    <div class="modal-top-bar">
+      <span class="modal-label">退会</span>
+      <button class="modal-close" onclick="closeOverlay('withdrawal-overlay')">✕</button>
+    </div>
+    <div class="modal-content">
       <div style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:#aaa;line-height:2;letter-spacing:0.05em;margin-bottom:2rem;">
         退会すると以下の処理が行われます。<br>
         ・ログインできなくなります<br>
@@ -1387,9 +1410,8 @@ footer {
         ・未譲渡の作品は非公開になります<br>
         ・この操作は取り消せません
       </div>
-      <button onclick="confirmWithdrawal()" style="width:100%;background:none;border:1px solid #662222;color:#aa4444;padding:1rem;font-family:'IBM Plex Mono',monospace;font-size:0.7rem;letter-spacing:0.2em;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='#1a0000'" onmouseout="this.style.background='none'">退会手続きをする</button>
+      <button onclick="confirmWithdrawal()" style="width:100%;background:none;border:1px solid #662222;color:#aa4444;padding:1rem;font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.2em;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='#1a0000'" onmouseout="this.style.background='none'">退会手続きをする</button>
     </div>
-
   </div>
 </div>
 
@@ -1444,14 +1466,6 @@ footer {
       <span class="modal-label" id="prof-modal-label">プロフィール</span>
       <button class="modal-close" onclick="closeOverlay('profile-overlay')">✕</button>
     </div>
-
-    <!-- タブ（本人のみ管理タブ表示） -->
-    <div id="prof-tabs" style="display:none;border-bottom:1px solid var(--border);display:flex;">
-      <button onclick="switchProfTab('info')" id="prof-tab-info" style="flex:1;padding:0.8rem;background:#111;border:none;border-bottom:2px solid var(--white);color:var(--white);font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.15em;cursor:pointer;">プロフィール</button>
-      <button onclick="switchProfTab('manage')" id="prof-tab-manage" style="flex:1;padding:0.8rem;background:#111;border:none;border-bottom:2px solid transparent;color:#aaa;font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.15em;cursor:pointer;">作品管理</button>
-    </div>
-
-    <!-- プロフィールタブ -->
     <div id="prof-tab-info-content" class="modal-content">
       <div style="display:flex;align-items:center;gap:1.5rem;margin-bottom:2rem;">
         <div id="prof-avatar" style="width:64px;height:64px;border-radius:50%;background:#222;border:1px solid #333;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
@@ -1461,6 +1475,30 @@ footer {
           <div style="font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:0.1em;margin-bottom:0.5rem;" id="prof-name"></div>
           <div style="font-size:0.85rem;color:#aaa;line-height:1.8;font-weight:300;" id="prof-bio"></div>
         </div>
+      </div>
+
+      <!-- 本人のみ編集UI表示 -->
+      <div id="prof-edit-section" style="display:none;border:1px solid #333;padding:1.2rem 1.5rem;margin-bottom:2rem;background:#0d0d0d;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#aaa;letter-spacing:0.2em;margin-bottom:1rem;">プロフィールを編集</div>
+        <div class="form-block" style="display:flex;align-items:center;gap:1.5rem;margin-bottom:1rem;">
+          <div id="s-avatar-preview" style="width:52px;height:52px;border-radius:50%;background:#222;border:1px solid #333;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          </div>
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+            <input type="file" id="s-avatar-file" accept="image/*" style="display:none;" onchange="previewAvatar(this)">
+            <button onclick="document.getElementById('s-avatar-file').click()" style="background:none;border:1px solid var(--border);color:#aaa;padding:0.4rem 1rem;font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.1em;cursor:pointer;">画像を変更</button>
+            <button id="s-avatar-delete-btn" onclick="deleteAvatar()" style="display:none;background:none;border:1px solid #662222;color:#aa4444;padding:0.4rem 1rem;font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.1em;cursor:pointer;">削除</button>
+          </div>
+        </div>
+        <div class="form-block">
+          <label class="form-lbl">ペンネーム</label>
+          <input type="text" class="form-ctrl" id="s-name" placeholder="名前">
+        </div>
+        <div class="form-block">
+          <label class="form-lbl">自己紹介</label>
+          <textarea class="form-ctrl" id="s-bio" placeholder="一言プロフィール" style="height:80px;"></textarea>
+        </div>
+        <button class="btn-submit" onclick="saveSettings()" style="width:100%;">保存する →</button>
       </div>
       <div id="prof-stats-all" style="display:grid;grid-template-columns:1fr 1fr 1fr;border:1px solid #333;margin-bottom:2rem;">
         <div style="padding:1.2rem 1.5rem;border-right:1px solid #333;">
@@ -1489,9 +1527,17 @@ footer {
       </div>
       <button class="btn-submit" id="prof-logout-btn" style="display:none;background:#333;color:#fff;" onclick="doLogout()">ログアウト</button>
     </div>
+  </div>
+</div>
 
-    <!-- 作品管理タブ -->
-    <div id="prof-tab-manage-content" class="modal-content" style="display:none;">
+<!-- MANAGE MODAL -->
+<div class="overlay" id="manage-overlay">
+  <div class="modal" style="max-width:680px;">
+    <div class="modal-top-bar">
+      <span class="modal-label">作品管理</span>
+      <button class="modal-close" onclick="closeOverlay('manage-overlay')">✕</button>
+    </div>
+    <div class="modal-content">
       <div id="prof-manage-list" style="display:flex;flex-direction:column;gap:1px;"></div>
     </div>
   </div>
@@ -1549,11 +1595,11 @@ footer {
       <!-- 価格（テスト版のため非表示） -->
       <div style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border);">
         <div style="display:none;">
-          <div style="font-family:'IBM Plex Mono',monospace;font-size:0.5rem;color:#aaa;letter-spacing:0.2em;margin-bottom:0.3rem;">完全譲渡価格</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:0.5rem;color:#aaa;letter-spacing:0.2em;margin-bottom:0.3rem;">続きを書く権利</div>
           <div style="font-family:'Bebas Neue',sans-serif;font-size:2.2rem;line-height:1;" id="ov-price"></div>
-          <div style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#aaa;margin-top:0.2rem;">続編・商用利用・再販すべて可</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#aaa;margin-top:0.2rem;">続きを書く権利を渡す</div>
         </div>
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#aaa;letter-spacing:0.05em;line-height:1.8;">続編・商用利用・再販すべて可<br>（テスト版のため無料で譲渡）</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#aaa;letter-spacing:0.05em;line-height:1.8;">「続きを書く」を押すと、続編を書く権利が取得できます。<br>（テスト版のため金銭のやり取りは発生しません）</div>
         <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
           <button id="ov-acquire-btn" onclick="acquireAndWrite()" style="background:var(--white);color:var(--black);border:none;padding:0.9rem 2rem;font-family:'IBM Plex Mono',monospace;font-size:0.7rem;letter-spacing:0.15em;cursor:pointer;transition:opacity 0.2s;white-space:nowrap;">続きを書く →</button>
           <button id="ov-read-btn" onclick="readFromOverview()" style="background:none;color:var(--white);border:1px solid var(--border);padding:0.9rem 2rem;font-family:'IBM Plex Mono',monospace;font-size:0.7rem;letter-spacing:0.15em;cursor:pointer;transition:all 0.2s;white-space:nowrap;">作品を読む →</button>
@@ -1644,7 +1690,7 @@ footer {
         <textarea class="form-ctrl" id="e-synopsis" style="min-height:120px;"></textarea>
       </div>
       <div class="form-block">
-        <label class="form-lbl">譲渡価格（¥）</label>
+        <label class="form-lbl">継承価格（¥）</label>
         <div id="e-price-display" style="display:none;"></div>
         <input type="hidden" id="e-price">
         <div style="background:var(--dim);border:1px solid var(--border);padding:0.9rem 1rem;font-family:'IBM Plex Mono',monospace;font-size:0.6rem;color:#555;letter-spacing:0.1em;">テスト版のため設定できません</div>
@@ -1705,7 +1751,7 @@ let works = [];
 let currentFilter = 'all';
 let currentId = null;
 
-function available() { return works.filter(w => w.status === 'available'); }
+function available() { return works.filter(w => w.status === 'available' || w.status === 'sold'); }
 
 // シリーズの最新話IDセットを返す
 function latestEpisodeIds() {
@@ -1798,7 +1844,7 @@ function render() {
       <div class="work-right">
         <div class="work-price" style="display:none;">
           <span class="work-price-num">${w.price === 0 ? '¥0' : '¥' + w.price.toLocaleString()}</span>
-          <span class="work-price-label">完全譲渡</span>
+          <span class="work-price-label">続きを書く権利</span>
         </div>
         <button class="btn-card primary" onclick="directRead(${w.id})">作品を読む →</button>
       </div>
@@ -1849,32 +1895,17 @@ function handleAuthClick(e) {
 document.addEventListener('click', e => {
   const wrap = document.getElementById('nav-user-wrap');
   if (wrap && !wrap.contains(e.target)) {
-    document.getElementById('nav-dropdown').classList.remove('open');
+    closeNavDropdown();
   }
 });
 
 function goToMyProfile() {
-  document.getElementById('nav-dropdown').classList.remove('open');
+  closeNavDropdown();
   openProfile(currentUser.name);
 }
 
 function openSettings() {
-  document.getElementById('nav-dropdown').classList.remove('open');
-  document.getElementById('s-name').value = currentUser.name;
-  document.getElementById('s-bio').value = currentUser.bio || '';
-
-  // アバタープレビューを現在の画像で更新
-  const preview = document.getElementById('s-avatar-preview');
-  const deleteBtn = document.getElementById('s-avatar-delete-btn');
-  if (currentUser.avatar_url) {
-    preview.innerHTML = `<img src="${currentUser.avatar_url}" style="width:100%;height:100%;object-fit:cover;">`;
-    deleteBtn.style.display = 'block';
-  } else {
-    preview.innerHTML = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`;
-    deleteBtn.style.display = 'none';
-  }
-
-  switchSettingsTab('profile');
+  closeNavDropdown();
   document.getElementById('settings-overlay').classList.add('open');
 }
 
@@ -1919,6 +1950,10 @@ async function saveSettings() {
   updateAuthUI();
   render();
   closeOverlay('settings-overlay');
+  // プロフィールモーダルが開いていれば再表示
+  if (document.getElementById('profile-overlay').classList.contains('open')) {
+    openProfile(currentUser.name);
+  }
   toast('プロフィールを更新しました');
 }
 
@@ -1952,15 +1987,6 @@ function previewAvatar(input) {
   const preview = document.getElementById('s-avatar-preview');
   preview.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;">`;
   document.getElementById('s-avatar-delete-btn').style.display = 'block';
-}
-
-function switchSettingsTab(tab) {
-  ['profile', 'account', 'danger'].forEach(t => {
-    document.getElementById(`settings-content-${t}`).style.display = t === tab ? 'block' : 'none';
-    const btn = document.getElementById(`settings-tab-${t}`);
-    btn.style.borderBottomColor = t === tab ? 'var(--white)' : 'transparent';
-    btn.style.color = t === tab ? 'var(--white)' : '#555';
-  });
 }
 
 async function updateEmail() {
@@ -2055,21 +2081,9 @@ async function doLogout() {
 // --- PROFILE ---
 let currentProfileName = '';
 
-function switchProfTab(tab) {
-  const isInfo = tab === 'info';
-  document.getElementById('prof-tab-info-content').style.display = isInfo ? 'block' : 'none';
-  document.getElementById('prof-tab-manage-content').style.display = isInfo ? 'none' : 'block';
-  document.getElementById('prof-tab-info').style.borderBottomColor = isInfo ? 'var(--white)' : 'transparent';
-  document.getElementById('prof-tab-info').style.color = isInfo ? 'var(--white)' : '#555';
-  document.getElementById('prof-tab-manage').style.borderBottomColor = isInfo ? 'transparent' : 'var(--white)';
-  document.getElementById('prof-tab-manage').style.color = isInfo ? '#555' : 'var(--white)';
-  if (!isInfo) renderManageList();
-}
-
 async function openProfile(authorName) {
   currentProfileName = authorName;
 
-  // Supabaseからプロフィール取得
   const { data: u } = await db.from('profiles').select('*').eq('name', authorName).single();
   const profile = u || { name: authorName, bio: '', posts: 0, transfers: 0 };
 
@@ -2081,7 +2095,6 @@ async function openProfile(authorName) {
   document.getElementById('prof-name').textContent = profile.name;
   document.getElementById('prof-bio').textContent = profile.bio || 'プロフィール未設定';
 
-  // アバター表示
   const profAvatar = document.getElementById('prof-avatar');
   if (profile.avatar_url) {
     profAvatar.innerHTML = `<img src="${profile.avatar_url}" style="width:100%;height:100%;object-fit:cover;">`;
@@ -2092,18 +2105,25 @@ async function openProfile(authorName) {
   document.getElementById('prof-transfers').textContent = transferred;
   document.getElementById('prof-revenue').textContent = `¥${revenue.toLocaleString()}`;
   document.getElementById('prof-logout-btn').style.display = isMe ? 'block' : 'none';
+  document.getElementById('prof-edit-section').style.display = isMe ? 'block' : 'none';
 
-  // 本人なら全統計、他人なら投稿数のみ
+  if (isMe) {
+    document.getElementById('s-name').value = currentUser.name || '';
+    document.getElementById('s-bio').value = currentUser.bio || '';
+    const avatarPreview = document.getElementById('s-avatar-preview');
+    const deleteBtn = document.getElementById('s-avatar-delete-btn');
+    if (profile.avatar_url) {
+      avatarPreview.innerHTML = `<img src="${profile.avatar_url}" style="width:100%;height:100%;object-fit:cover;">`;
+      deleteBtn.style.display = 'block';
+    } else {
+      avatarPreview.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`;
+      deleteBtn.style.display = 'none';
+    }
+  }
+
   document.getElementById('prof-stats-all').style.display = isMe ? 'grid' : 'none';
   document.getElementById('prof-stats-other').style.display = isMe ? 'none' : 'grid';
   document.getElementById('prof-posts-other').textContent = authorWorks.length;
-
-  // タブ：本人のみ「作品管理」タブ表示
-  const tabs = document.getElementById('prof-tabs');
-  tabs.style.display = isMe ? 'flex' : 'none';
-
-  // プロフィールタブをデフォルト表示
-  switchProfTab('info');
 
   const workList = document.getElementById('prof-works');
   if (authorWorks.length === 0) {
@@ -2121,6 +2141,11 @@ async function openProfile(authorName) {
   document.getElementById('profile-overlay').classList.add('open');
 }
 
+async function openManageOverlay() {
+  document.getElementById('manage-overlay').classList.add('open');
+  await renderManageList();
+}
+
 // --- 作品管理 ---
 async function renderManageList() {
   const myWorks = works.filter(w => w.author === currentProfileName);
@@ -2133,19 +2158,29 @@ async function renderManageList() {
     const draft = drafts && drafts.length > 0 ? drafts[0] : null;
     if (draft) {
       const updatedAt = new Date(draft.updated_at).toLocaleString('ja-JP');
+      const isSequel = !!draft.sequel_source_id;
+      const sourceWork = isSequel ? works.find(x => x.id === draft.sequel_source_id) : null;
+      const draftLabel = isSequel ? '続編下書き' : '下書き';
+      const nextEpisode = isSequel && sourceWork ? (sourceWork.episode || 1) + 1 : null;
+      const draftTitle = isSequel && sourceWork
+        ? `${sourceWork.title} ${nextEpisode}話`
+        : (draft.title || '（タイトル未入力）');
+      const resumeAction = isSequel
+        ? `closeOverlay('manage-overlay'); openSequelPostFromDraft(${draft.sequel_source_id});`
+        : `closeOverlay('manage-overlay'); openPost();`;
       draftHtml = `
         <div style="border:1px solid #444;margin-bottom:-1px;padding:1.2rem 1.5rem;background:#0d0d0d;">
           <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;">
             <div>
               <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.3rem;">
-                <span style="font-family:'IBM Plex Mono',monospace;font-size:0.5rem;color:#aaa;border:1px solid #555;padding:0.2rem 0.5rem;letter-spacing:0.1em;">下書き</span>
-                <span style="font-family:'Noto Serif JP',serif;font-size:1rem;font-weight:700;">${draft.title || '（タイトル未入力）'}</span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:0.5rem;color:#aaa;border:1px solid #555;padding:0.2rem 0.5rem;letter-spacing:0.1em;">${draftLabel}</span>
+                <span style="font-family:'Noto Serif JP',serif;font-size:1rem;font-weight:700;">${draftTitle}</span>
               </div>
               <div style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#aaa;letter-spacing:0.1em;">${updatedAt} 保存</div>
             </div>
             <div style="display:flex;gap:0.5rem;">
-              <button onclick="closeOverlay('profile-overlay');openPost();" style="background:none;border:1px solid var(--border);color:#aaa;padding:0.4rem 0.8rem;font-family:'IBM Plex Mono',monospace;font-size:0.55rem;letter-spacing:0.1em;cursor:pointer;">✎ 編集を再開</button>
-              <button onclick="deleteDraft()" style="background:none;border:1px solid #662222;color:#aa4444;padding:0.4rem 0.8rem;font-family:'IBM Plex Mono',monospace;font-size:0.55rem;letter-spacing:0.1em;cursor:pointer;">削除</button>
+              <button onclick="${resumeAction}" style="background:none;border:1px solid var(--border);color:#aaa;padding:0.4rem 0.8rem;font-family:'IBM Plex Mono',monospace;font-size:0.55rem;letter-spacing:0.1em;cursor:pointer;">✎ 編集を再開</button>
+              <button onclick="deleteDraft(${isSequel})" style="background:none;border:1px solid #662222;color:#aa4444;padding:0.4rem 0.8rem;font-family:'IBM Plex Mono',monospace;font-size:0.55rem;letter-spacing:0.1em;cursor:pointer;">削除</button>
             </div>
           </div>
         </div>
@@ -2178,14 +2213,23 @@ async function renderManageList() {
   `).join('');
 }
 
-async function deleteDraft() {
+async function deleteDraft(isSequel) {
+  if (isSequel) {
+    const ok = await showConfirm(
+      '続きを書く権利が失われます',
+      '下書きを削除すると、この作品の続きを書く権利が失われます。<br>本当に削除しますか？',
+      '削除する',
+      true
+    );
+    if (!ok) return;
+  }
   await db.from('drafts').delete().eq('user_id', currentUser.id);
   toast('下書きを削除しました');
   renderManageList();
 }
 
 function openManageEdit(id) {
-  closeOverlay('profile-overlay');
+  closeOverlay('manage-overlay');
   currentId = id;
   openEditOverlay();
 }
@@ -2364,6 +2408,14 @@ function renderMangaPreview() {
 }
 
 function closePost() {
+  // 続編モードで何か入力されていれば自動下書き保存
+  if (sequelSourceWork) {
+    const synopsis = document.getElementById('f-synopsis').value.trim();
+    const body = document.getElementById('f-body') ? document.getElementById('f-body').value.trim() : '';
+    if (synopsis || body) {
+      saveDraft();
+    }
+  }
   closeOverlay('post-overlay');
   mangaFileOrder = [];
   document.getElementById('f-manga-files').value = '';
@@ -2379,15 +2431,17 @@ function closePost() {
 }
 
 // カスタム確認ダイアログ
-function showConfirm(title, message, okLabel = '確認') {
+function showConfirm(title, message, okLabel = '確認', danger = false) {
   return new Promise(resolve => {
     document.getElementById('confirm-title').textContent = title;
     document.getElementById('confirm-message').innerHTML = message;
-    document.getElementById('confirm-ok-btn').textContent = okLabel;
-    document.getElementById('confirm-overlay').classList.add('open');
-
     const okBtn = document.getElementById('confirm-ok-btn');
     const cancelBtn = document.getElementById('confirm-cancel-btn');
+    okBtn.textContent = okLabel;
+    okBtn.dataset.danger = danger ? 'true' : 'false';
+    okBtn.style.background = 'var(--white)';
+    okBtn.style.color = 'var(--black)';
+    document.getElementById('confirm-overlay').classList.add('open');
 
     const cleanup = (result) => {
       document.getElementById('confirm-overlay').classList.remove('open');
@@ -2401,6 +2455,73 @@ function showConfirm(title, message, okLabel = '確認') {
   });
 }
 
+function closeNavDropdown() {
+  document.getElementById('nav-dropdown').classList.remove('open');
+  ['profile-submenu', 'account-submenu', 'legal-submenu'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+  document.getElementById('profile-submenu-arrow').textContent = '▶';
+  document.getElementById('account-submenu-arrow').textContent = '▶';
+  document.getElementById('legal-submenu-arrow').textContent = '▶';
+}
+
+function toggleNavSubmenu(e, submenuId, arrowId) {
+  e.stopPropagation();
+  const sub = document.getElementById(submenuId);
+  const arrow = document.getElementById(arrowId);
+  const isOpen = sub.style.display === 'flex';
+  ['profile-submenu', 'account-submenu', 'legal-submenu'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+  document.getElementById('profile-submenu-arrow').textContent = '▶';
+  document.getElementById('account-submenu-arrow').textContent = '▶';
+  document.getElementById('legal-submenu-arrow').textContent = '▶';
+  sub.style.display = isOpen ? 'none' : 'flex';
+  arrow.textContent = isOpen ? '▶' : '▼';
+}
+
+function toggleLegalSubmenu(e) {
+  toggleNavSubmenu(e, 'legal-submenu', 'legal-submenu-arrow');
+}
+
+function openInquiry() {
+  // ログイン中は名前とメールを自動入力
+  if (currentUser) {
+    document.getElementById('iq-name').value  = currentUser.name || '';
+    document.getElementById('iq-email').value = currentUser.email || '';
+  } else {
+    document.getElementById('iq-name').value  = '';
+    document.getElementById('iq-email').value = '';
+  }
+  document.getElementById('iq-category').value = '';
+  document.getElementById('iq-body').value = '';
+  document.getElementById('inquiry-overlay').classList.add('open');
+}
+
+async function submitInquiry() {
+  const name     = document.getElementById('iq-name').value.trim();
+  const email    = document.getElementById('iq-email').value.trim();
+  const category = document.getElementById('iq-category').value;
+  const body     = document.getElementById('iq-body').value.trim();
+
+  if (!name) { toast('お名前を入力してください'); return; }
+  if (!email) { toast('メールアドレスを入力してください'); return; }
+  if (!body) { toast('お問い合わせ内容を入力してください'); return; }
+
+  const { error } = await db.from('inquiries').insert({
+    name,
+    email,
+    category: category || null,
+    body,
+    user_id: currentUser ? currentUser.id : null,
+  });
+
+  if (error) { toast('送信に失敗しました'); return; }
+
+  closeOverlay('inquiry-overlay');
+  toast('お問い合わせを受け付けました');
+}
+
 function openLegal(type) {
   const isTerms = type === 'terms';
   document.getElementById('legal-title').textContent = isTerms ? '利用規約' : 'プライバシーポリシー';
@@ -2409,36 +2530,36 @@ function openLegal(type) {
 }
 
 const TERMS_HTML = `
-<p style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#aaa;margin-bottom:2rem;">最終更新日：2026年2月27日（暫定版）</p>
+<p style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#aaa;margin-bottom:2rem;">最終更新日：2026年2月27日（テスト版）</p>
+<p style="font-size:0.8rem;line-height:2;margin-bottom:1.5rem;">本規約は、本サービス（以下「本サービス」）の利用条件を定めるものです。利用者は、本サービスを利用することで本規約に同意したものとみなします。</p>
 
-<h3 style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;color:#fff;margin:1.5rem 0 0.5rem;">第1条（適用）</h3>
-<p>本利用規約（以下「本規約」）は、BLACK BOX（以下「本サービス」）の利用条件を定めるものです。ユーザーの皆さまには、本規約に従って本サービスをご利用いただきます。</p>
+<h3 style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;color:#fff;margin:1.5rem 0 0.5rem;">第1条（本サービスについて）</h3>
+<p>1. 本サービスは、ユーザーが物語を投稿し、他のユーザーがその続編を作成できる創作プラットフォームです。</p>
+<p>2. 本サービスは現在テスト運用中であり、予告なく仕様変更・機能停止・データ削除を行う場合があります。</p>
 
-<h3 style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;color:#fff;margin:1.5rem 0 0.5rem;">第2条（サービスの概要）</h3>
-<p>本サービスは、未完成の漫画・小説作品の著作権を第三者に完全譲渡するためのプラットフォームです。作品の投稿・閲覧・購入（著作権譲受）の場を提供します。</p>
+<h3 style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;color:#fff;margin:1.5rem 0 0.5rem;">第2条（著作権）</h3>
+<p>1. 投稿された各作品（各話）の著作権は、それぞれの投稿者に帰属します。</p>
+<p>2. ユーザーは、自身の投稿作品について、本サービス上で表示・公開されることを許諾するものとします。</p>
+<p>3. 投稿者は、投稿する作品が自己の創作物であり、第三者の権利を侵害していないことを保証します。第三者から権利侵害の申し立てがあった場合、投稿者が自己の責任と費用で対処するものとします。</p>
 
-<h3 style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;color:#fff;margin:1.5rem 0 0.5rem;">第3条（著作権の譲渡）</h3>
-<p>1. 投稿者（譲渡人）は、決済完了時点をもって、当該作品に関するすべての著作権（著作財産権）を購入者（譲受人）に完全に譲渡するものとします。</p>
-<p>2. 著作者人格権は譲渡できないものとされていますが、投稿者は購入者に対して著作者人格権を行使しないものとします。</p>
-<p>3. 決済完了後、投稿者は当該作品に対する一切の権利を主張できません。</p>
-<p>4. 購入者は譲受した著作権について、続編制作・商用利用・再販売を含むすべての利用が可能です。</p>
+<h3 style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;color:#fff;margin:1.5rem 0 0.5rem;">第3条（続編の作成）</h3>
+<p>1. ユーザーは、自身の投稿作品に対して他のユーザーが続編を作成することに同意するものとします。</p>
+<p>2. 続編として投稿された作品の著作権は、その投稿者に帰属します。</p>
+<p>3. 本サービスは、作品全体の権利関係について保証・調整を行うものではありません。</p>
 
-<h3 style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;color:#fff;margin:1.5rem 0 0.5rem;">第4条（投稿者の義務）</h3>
-<p>1. 投稿者は、投稿する作品が自己の創作物であり、第三者の権利を侵害していないことを保証します。</p>
-<p>2. 第三者のキャラクターや著作物を無断使用した作品の投稿は禁止します。</p>
-<p>3. 投稿者は第三者から権利侵害の申し立てがあった場合、自己の責任と費用で対処するものとします。</p>
+<h3 style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;color:#fff;margin:1.5rem 0 0.5rem;">第4条（金額表示について）</h3>
+<p>1. 本サービス上に表示される金額はテスト目的の機能であり、現時点では実際の金銭取引は発生しません。</p>
+<p>2. 将来的に決済機能を導入する場合、別途規約を定めるものとします。</p>
 
-<h3 style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;color:#fff;margin:1.5rem 0 0.5rem;">第5条（禁止事項）</h3>
-<p>以下の行為を禁止します。</p>
-<p>・第三者の著作権・商標権等を侵害するコンテンツの投稿<br>・わいせつ・暴力的・差別的なコンテンツの投稿<br>・虚偽の情報の登録・投稿<br>・本サービスの運営を妨害する行為<br>・その他、運営が不適切と判断する行為</p>
+<h3 style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;color:#fff;margin:1.5rem 0 0.5rem;">第5条（商業利用）</h3>
+<p>投稿作品の商業利用（出版、映像化等）については、関係する投稿者間で協議するものとし、本サービス運営は仲介・保証の義務を負いません。</p>
 
-<h3 style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;color:#fff;margin:1.5rem 0 0.5rem;">第6条（手数料）</h3>
-<p>本サービスは、作品の譲渡成立時に取引金額の一定割合をプラットフォーム手数料として徴収します。手数料率は別途定めるものとします。</p>
+<h3 style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;color:#fff;margin:1.5rem 0 0.5rem;">第6条（禁止事項）</h3>
+<p>以下の内容を含む投稿を禁止します。</p>
+<p>・他者の著作物の無断転載<br>・法令に違反する内容<br>・公序良俗に反する内容<br>・他者を誹謗中傷する内容<br>・その他、運営が不適切と判断する内容</p>
 
-<h3 style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;color:#fff;margin:1.5rem 0 0.5rem;">第7条（免責事項）</h3>
-<p>1. 運営は、本サービスを通じた取引において生じた損害について、故意または重過失がある場合を除き責任を負いません。</p>
-<p>2. 投稿者と購入者の間のトラブルについて、運営は仲介の義務を負いません。</p>
-<p>3. 本サービスは現在テスト運用中であり、予告なく内容を変更・停止する場合があります。</p>
+<h3 style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;color:#fff;margin:1.5rem 0 0.5rem;">第7条（免責）</h3>
+<p>本サービスの利用に関連して発生したユーザー間のトラブルについて、運営は責任を負いません。</p>
 
 <h3 style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;color:#fff;margin:1.5rem 0 0.5rem;">第8条（規約の変更）</h3>
 <p>運営は必要に応じて本規約を変更できるものとします。変更後の規約はサービス上に掲示した時点から効力を持ちます。</p>
@@ -2611,7 +2732,9 @@ async function submitWork() {
 // フォームからプレビューを開く（漫画・小説両対応）
 function openPreviewFromForm() {
   const format = document.getElementById('f-format').value;
-  const title  = document.getElementById('f-title').value.trim() || '（タイトル未入力）';
+  const baseTitle = document.getElementById('f-title').value.trim() || '（タイトル未入力）';
+  const nextEpPv = sequelSourceWork ? (sequelSourceWork.episode || 1) + 1 : null;
+  const title  = nextEpPv ? `${baseTitle} ${nextEpPv}話` : baseTitle;
   const genre  = document.getElementById('f-genre').value.trim() || '未設定';
   const author = currentUser ? currentUser.name : '匿名';
   const today  = new Date().toISOString().slice(0, 10);
@@ -2658,9 +2781,9 @@ async function saveDraft() {
     format:   document.getElementById('f-format').value,
     body:     document.getElementById('f-body') ? document.getElementById('f-body').value : '',
     updated_at: new Date().toISOString(),
+    sequel_source_id: sequelSourceWork ? sequelSourceWork.id : null,
   };
 
-  // 既存の下書きがあればupsert
   const { data: existing } = await db.from('drafts').select('id').eq('user_id', currentUser.id).limit(1);
   const existingDraft = existing && existing.length > 0 ? existing[0] : null;
   if (existingDraft) {
@@ -2678,6 +2801,33 @@ async function loadDraft() {
   const draft = drafts && drafts.length > 0 ? drafts[0] : null;
   if (!draft) return;
 
+  // 続編モードの復元
+  if (draft.sequel_source_id) {
+    const sourceWork = works.find(x => x.id === draft.sequel_source_id);
+    if (sourceWork) {
+      sequelSourceWork = sourceWork;
+      document.getElementById('f-modal-label').textContent = '続編を投稿';
+      document.getElementById('f-normal-fields').style.display = 'none';
+      document.getElementById('f-sequel-info').style.display = 'block';
+      const nextEpLoad = (sourceWork.episode || 1) + 1;
+      const badge = document.getElementById('f-sequel-format-badge');
+      badge.textContent = sourceWork.format === 'manga' ? '漫画' : '小説';
+      badge.className = `work-format-badge ${sourceWork.format}`;
+      document.getElementById('f-modal-label').textContent = `続編を投稿（${nextEpLoad}話）`;
+      document.getElementById('f-sequel-title').textContent = `${sourceWork.title} ${nextEpLoad}話`;
+      document.getElementById('f-sequel-genre').textContent = sourceWork.genre;
+      const mangaBlock = document.getElementById('f-manga-block');
+      const novelBlock = document.getElementById('f-novel-block');
+      mangaBlock.style.display = sourceWork.format === 'manga' ? 'block' : 'none';
+      novelBlock.style.display = sourceWork.format === 'novel' ? 'block' : 'none';
+    }
+  } else {
+    const mangaBlock = document.getElementById('f-manga-block');
+    const novelBlock = document.getElementById('f-novel-block');
+    mangaBlock.style.display = draft.format === 'manga' ? 'block' : 'none';
+    novelBlock.style.display = draft.format === 'novel' ? 'block' : 'none';
+  }
+
   document.getElementById('f-title').value    = draft.title || '';
   document.getElementById('f-genre').value    = draft.genre || '';
   document.getElementById('f-synopsis').value = draft.synopsis || '';
@@ -2687,12 +2837,6 @@ async function loadDraft() {
 
   document.getElementById('f-title-count').textContent = (draft.title || '').length + '/40';
   document.getElementById('f-synopsis-count').textContent = (draft.synopsis || '').length + '/160';
-
-  const formatEl   = document.getElementById('f-format');
-  const mangaBlock = document.getElementById('f-manga-block');
-  const novelBlock = document.getElementById('f-novel-block');
-  mangaBlock.style.display = formatEl.value === 'manga' ? 'block' : 'none';
-  novelBlock.style.display = formatEl.value === 'novel' ? 'block' : 'none';
 }
 
 // --- PREVIEW ---
@@ -2946,8 +3090,8 @@ async function acquireWork() {
   if (w.author_id === currentUser.id) { toast('自分の作品は取得できません'); return; }
 
   const ok = await showConfirm(
-    '著作権を取得する',
-    `「${w.title}」の著作権を取得しますか？<br>続編・商用利用・再販すべて可能になります。この操作は取り消せません。`,
+    '続きを書く権利を取得する',
+    `「${w.title}」${(w.episode || 1) + 1}話を書く権利を取得しますか？<br>この操作は取り消せません。`,
     '取得する →'
   );
   if (!ok) return;
@@ -2967,7 +3111,7 @@ async function acquireWork() {
     .update({ transfers: (await db.from('profiles').select('transfers').eq('id', w.author_id).single()).data.transfers + 1 })
     .eq('id', w.author_id);
 
-  toast('著作権を取得しました！続きを自由に書いてください');
+  toast('続きを書く権利を取得しました！');
   closeOverlay('detail-overlay');
   closeOverlay('overview-overlay');
   render();
@@ -3117,8 +3261,8 @@ async function acquireAndWrite() {
   if (w.author_id === currentUser.id) { toast('自分の作品の続きは書けません'); return; }
 
   const ok = await showConfirm(
-    '続編を書く権利を取得する',
-    `「${w.title}」の権利を取得しますか？<br>取得後は続きを自由に書けます。この操作は取り消せません。`,
+    '続きを書く権利を取得する',
+    `「${w.title}」${(w.episode || 1) + 1}話を書く権利を取得しますか？<br>この操作は取り消せません。`,
     '取得して続きを書く →'
   );
   if (!ok) return;
@@ -3139,11 +3283,31 @@ async function acquireAndWrite() {
   w.status = 'sold';
   w.buyer_id = currentUser.id;
 
+  // 続編の下書きを自動保存
+  const draftData = {
+    user_id: currentUser.id,
+    title: w.title,
+    genre: w.genre,
+    synopsis: '',
+    price: 0,
+    format: w.format,
+    body: '',
+    updated_at: new Date().toISOString(),
+    sequel_source_id: w.id,
+  };
+  const { data: existing } = await db.from('drafts').select('id').eq('user_id', currentUser.id).limit(1);
+  const existingDraft = existing && existing.length > 0 ? existing[0] : null;
+  if (existingDraft) {
+    await db.from('drafts').update(draftData).eq('id', existingDraft.id);
+  } else {
+    await db.from('drafts').insert(draftData);
+  }
+
   // 続編フォームを開く
   sequelSourceWork = w;
   closeReader();
-  closePage('detail-page');
   closeOverlay('overview-overlay');
+  closeOverlay('detail-overlay');
   render();
   openSequelPost(w);
   toast(`「${w.title}」の権利を取得しました`);
@@ -3159,7 +3323,8 @@ function openSequelPost(w) {
   document.getElementById('f-synopsis-count').textContent = '0/160';
 
   // 続編モードのUI
-  document.getElementById('f-modal-label').textContent = '続編を投稿';
+  const nextEp = (w.episode || 1) + 1;
+  document.getElementById('f-modal-label').textContent = `続編を投稿（${nextEp}話）`;
   document.getElementById('f-normal-fields').style.display = 'none';
   document.getElementById('f-sequel-info').style.display = 'block';
 
@@ -3167,7 +3332,7 @@ function openSequelPost(w) {
   const badge = document.getElementById('f-sequel-format-badge');
   badge.textContent = w.format === 'manga' ? '漫画' : '小説';
   badge.className = `work-format-badge ${w.format}`;
-  document.getElementById('f-sequel-title').textContent = w.title;
+  document.getElementById('f-sequel-title').textContent = `${w.title} ${nextEp}話`;
   document.getElementById('f-sequel-genre').textContent = w.genre;
 
   // 隠しフィールドにセット
@@ -3182,6 +3347,14 @@ function openSequelPost(w) {
   novelBlock.style.display = w.format === 'novel' ? 'block' : 'none';
 
   document.getElementById('post-overlay').classList.add('open');
+}
+
+async function openSequelPostFromDraft(sourceId) {
+  const sourceWork = works.find(x => x.id === sourceId);
+  if (!sourceWork) { toast('元の作品が見つかりません'); return; }
+  sequelSourceWork = sourceWork;
+  openSequelPost(sourceWork);
+  await loadDraft();
 }
 
 function acquireFromPage() {
