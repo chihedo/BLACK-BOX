@@ -2172,6 +2172,7 @@ async function renderManageList() {
                 <span style="font-family:'Noto Serif JP',serif;font-size:1rem;font-weight:700;">${draftTitle}</span>
               </div>
               <div style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#aaa;letter-spacing:0.1em;">${updatedAt} 保存</div>
+              ${isSequel ? `<div style="font-family:'IBM Plex Mono',monospace;font-size:0.5rem;color:#664400;letter-spacing:0.05em;margin-top:0.4rem;">⚠ 権利取得から90日以内に投稿がない場合、続きを書く権利は自動的に失効します</div>` : ''}
             </div>
             <div style="display:flex;gap:0.5rem;">
               <button onclick="${resumeAction}" style="background:none;border:1px solid var(--border);color:#aaa;padding:0.4rem 0.8rem;font-family:'IBM Plex Mono',monospace;font-size:0.55rem;letter-spacing:0.1em;cursor:pointer;">✎ 編集を再開</button>
@@ -2541,6 +2542,7 @@ const TERMS_HTML = `
 <p>1. ユーザーは、自身の投稿作品に対して他のユーザーが続編を作成することに同意するものとします。</p>
 <p>2. 続編として投稿された作品の著作権は、その投稿者に帰属します。</p>
 <p>3. 本サービスは、作品全体の権利関係について保証・調整を行うものではありません。</p>
+<p>4. 続きを書く権利を取得したユーザーが取得日から90日以内に続編を投稿しない場合、当該権利は自動的に失効し、作品は再び他のユーザーが続きを書ける状態に戻るものとします。</p>
 
 <h3 style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.2em;color:#fff;margin:1.5rem 0 0.5rem;">第4条（金額表示について）</h3>
 <p>1. 本サービス上に表示される金額はテスト目的の機能であり、現時点では実際の金銭取引は発生しません。</p>
