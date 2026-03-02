@@ -1139,7 +1139,6 @@ footer {
         <div id="account-submenu" style="display:none;flex-direction:column;">
           <button onclick="closeNavDropdown(); openSettings();" style="padding-left:2rem;font-size:0.6rem;color:#aaa;">メール・パスワード</button>
           <button onclick="closeNavDropdown(); openInquiry();" style="padding-left:2rem;font-size:0.6rem;color:#aaa;">お問い合わせ</button>
-          <button onclick="closeNavDropdown(); document.getElementById('withdrawal-overlay').classList.add('open');" style="padding-left:2rem;font-size:0.6rem;color:#aa4444;">退会</button>
         </div>
         <button onclick="toggleNavSubmenu(event, 'legal-submenu', 'legal-submenu-arrow')" style="display:flex;align-items:center;justify-content:space-between;">規約・ポリシー <span id="legal-submenu-arrow" style="font-size:0.6rem;">▶</span></button>
         <div id="legal-submenu" style="display:none;flex-direction:column;">
@@ -1238,6 +1237,9 @@ footer {
         <textarea class="form-ctrl" id="iq-body" placeholder="お問い合わせ内容をご記入ください" style="min-height:140px;resize:vertical;line-height:2;"></textarea>
       </div>
       <button class="btn-submit" onclick="submitInquiry()" style="width:100%;">送信する →</button>
+      <div style="margin-top:3rem;padding-top:1.5rem;border-top:1px solid #2a0000;">
+        <button onclick="confirmWithdrawal()" style="width:100%;background:none;border:1px solid #662222;color:#aa4444;padding:0.8rem;font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.15em;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='#cc2222';this.style.color='#fff'" onmouseout="this.style.background='none';this.style.color='#aa4444'">退会する</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1395,26 +1397,6 @@ footer {
   </div>
 </div>
 
-<!-- WITHDRAWAL MODAL -->
-<div class="overlay" id="withdrawal-overlay">
-  <div class="modal">
-    <div class="modal-top-bar">
-      <span class="modal-label">退会</span>
-      <button class="modal-close" onclick="closeOverlay('withdrawal-overlay')">✕</button>
-    </div>
-    <div class="modal-content">
-      <div style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:#aaa;line-height:2;letter-spacing:0.05em;margin-bottom:2rem;">
-        退会すると以下の処理が行われます。<br>
-        ・ログインできなくなります<br>
-        ・譲渡済みの作品はそのまま残ります<br>
-        ・未譲渡の作品は非公開になります<br>
-        ・この操作は取り消せません
-      </div>
-      <button onclick="confirmWithdrawal()" style="width:100%;background:none;border:1px solid #662222;color:#aa4444;padding:1rem;font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.2em;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='#1a0000'" onmouseout="this.style.background='none'">退会手続きをする</button>
-    </div>
-  </div>
-</div>
-
 <!-- LOGIN MODAL -->
 <div class="overlay" id="login-overlay">
   <div class="modal">
@@ -1506,7 +1488,7 @@ footer {
           <span style="font-family:'Bebas Neue',sans-serif;font-size:2rem;display:block;" id="prof-posts">0</span>
         </div>
         <div style="padding:1.2rem 1.5rem;border-right:1px solid #333;">
-          <span style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#aaa;letter-spacing:0.2em;display:block;margin-bottom:0.4rem;">譲渡実績</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#aaa;letter-spacing:0.2em;display:block;margin-bottom:0.4rem;">継承実績</span>
           <span style="font-family:'Bebas Neue',sans-serif;font-size:2rem;display:block;" id="prof-transfers">0</span>
         </div>
         <div style="padding:1.2rem 1.5rem;">
@@ -2008,8 +1990,14 @@ async function sendPasswordReset() {
   toast('パスワード変更リンクを送信しました');
 }
 
-function confirmWithdrawal() {
-  if (!confirm('本当に退会しますか？\nこの操作は取り消せません。')) return;
+async function confirmWithdrawal() {
+  const ok = await showConfirm(
+    '退会の確認',
+    '退会するとログインできなくなります。<br>この操作は取り消せません。',
+    '退会する',
+    true
+  );
+  if (!ok) return;
   toast('退会機能は現在準備中です');
   // TODO: 退会処理の実装
 }
@@ -2133,7 +2121,7 @@ async function openProfile(authorName) {
       <div class="prof-work-item" onclick="closeOverlay('profile-overlay'); openOverview(${w.id})">
         <span class="work-format-badge ${w.format}" style="font-size:0.5rem;padding:0.2rem 0.5rem;">${w.format === 'manga' ? '漫画' : '小説'}</span>
         <span class="prof-work-title">${w.title}</span>
-        <span class="prof-work-status ${w.status === 'sold' ? 'sold' : ''}">${w.status === 'sold' ? '譲渡済' : '募集中'}</span>
+        <span class="prof-work-status ${w.status === 'sold' ? 'sold' : ''}">${w.status === 'sold' ? '継承済' : '募集中'}</span>
       </div>
     `).join('');
   }
@@ -2142,6 +2130,7 @@ async function openProfile(authorName) {
 }
 
 async function openManageOverlay() {
+  if (currentUser) currentProfileName = currentUser.name;
   document.getElementById('manage-overlay').classList.add('open');
   await renderManageList();
 }
@@ -2305,7 +2294,7 @@ function openDetail(id) {
 
   const btn = document.getElementById('d-acquire-btn');
   if (w.status === 'sold') {
-    btn.textContent = '譲渡済み';
+    btn.textContent = '継承済み';
     btn.style.background = '#222';
     btn.style.color = '#555';
     btn.style.cursor = 'default';
@@ -2948,7 +2937,7 @@ function openOverview(id) {
       ${[...episodes].reverse().map(ep => {
         const isLatest = ep.id === episodes[episodes.length - 1].id;
         const daysSince = (Date.now() - new Date(ep.date).getTime()) / (1000 * 60 * 60 * 24);
-        const showNew = isLatest && daysSince <= 14;
+        const showNew = isLatest && daysSince <= 7;
         return `
         <div class="ep-row">
           <div class="ep-row-info">
@@ -2969,7 +2958,7 @@ function openOverview(id) {
   // 取得ボタンの状態制御
   const ovAcquireBtn = document.getElementById('ov-acquire-btn');
   if (w.status === 'sold') {
-    ovAcquireBtn.textContent = '譲渡済み';
+    ovAcquireBtn.textContent = '継承済み';
     ovAcquireBtn.style.background = '#222';
     ovAcquireBtn.style.color = '#555';
     ovAcquireBtn.style.cursor = 'default';
@@ -3086,7 +3075,7 @@ async function acquireWork() {
   if (!currentUser) { toast('ログインが必要です'); return; }
   const w = works.find(x => x.id === currentId);
   if (!w) return;
-  if (w.status === 'sold') { toast('この作品はすでに譲渡済みです'); return; }
+  if (w.status === 'sold') { toast('この作品はすでに継承済みです'); return; }
   if (w.author_id === currentUser.id) { toast('自分の作品は取得できません'); return; }
 
   const ok = await showConfirm(
@@ -3106,7 +3095,7 @@ async function acquireWork() {
   w.status = 'sold';
   w.buyer_id = currentUser.id;
 
-  // 元の作者の譲渡実績を+1
+  // 元の作者の継承実績を+1
   await db.from('profiles')
     .update({ transfers: (await db.from('profiles').select('transfers').eq('id', w.author_id).single()).data.transfers + 1 })
     .eq('id', w.author_id);
@@ -3257,7 +3246,7 @@ async function acquireAndWrite() {
   if (!currentUser) { toast('ログインが必要です'); return; }
   const w = works.find(x => x.id === currentId);
   if (!w) return;
-  if (w.status === 'sold') { toast('この作品はすでに譲渡済みです'); return; }
+  if (w.status === 'sold') { toast('この作品はすでに継承済みです'); return; }
   if (w.author_id === currentUser.id) { toast('自分の作品の続きは書けません'); return; }
 
   const ok = await showConfirm(
@@ -3273,7 +3262,7 @@ async function acquireAndWrite() {
     .eq('id', w.id);
   if (error) { toast('取得に失敗しました'); return; }
 
-  // 前話作者の譲渡実績を+1
+  // 前話作者の継承実績を+1
   const { data: authorProfile } = await db.from('profiles').select('transfers').eq('id', w.author_id).single();
   if (authorProfile) {
     await db.from('profiles').update({ transfers: authorProfile.transfers + 1 }).eq('id', w.author_id);
@@ -3383,7 +3372,7 @@ let editDragSrcIndex = null;
 function openEditOverlay() {
   const w = works.find(x => x.id === currentId);
   if (!w || !currentUser || currentUser.id !== w.author_id) return;
-  if (w.status === 'sold') { toast('譲渡済みの作品は編集できません'); return; }
+  if (w.status === 'sold') { toast('継承済みの作品は編集できません'); return; }
 
   document.getElementById('e-title').value   = w.title;
   document.getElementById('e-format').value  = w.format;
