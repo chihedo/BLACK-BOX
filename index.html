@@ -1348,6 +1348,9 @@ footer {
       </div>
       <div class="form-block" id="f-novel-block" style="display:none;">
         <label class="form-lbl">本文（段落ごとに空行で区切ってください）</label>
+        <div style="margin-bottom:0.5rem;">
+          <button type="button" onclick="insertDivider('f-body')" style="background:none;border:1px solid var(--border);color:#aaa;padding:0.3rem 0.8rem;font-family:'IBM Plex Mono',monospace;font-size:0.55rem;letter-spacing:0.1em;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.borderColor='#fff';this.style.color='#fff'" onmouseout="this.style.borderColor='var(--border)';this.style.color='#aaa'">― 区切り線を挿入</button>
+        </div>
         <textarea class="form-ctrl" id="f-body" placeholder="ここに本文を入力..." style="min-height:240px;line-height:2;font-family:'Noto Serif JP',serif;font-size:0.85rem;resize:vertical;"></textarea>
       </div>
       <div class="form-block">
@@ -1534,6 +1537,9 @@ footer {
     </div>
     <div class="modal-content">
       <div style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#aaa;letter-spacing:0.15em;margin-bottom:0.5rem;">本文（段落ごとに空行で区切ってください）</div>
+      <div style="margin-bottom:0.5rem;">
+        <button type="button" onclick="insertDivider('text-edit-input')" style="background:none;border:1px solid var(--border);color:#aaa;padding:0.3rem 0.8rem;font-family:'IBM Plex Mono',monospace;font-size:0.55rem;letter-spacing:0.1em;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.borderColor='#fff';this.style.color='#fff'" onmouseout="this.style.borderColor='var(--border)';this.style.color='#aaa'">― 区切り線を挿入</button>
+      </div>
       <textarea id="text-edit-input" style="width:100%;background:#0d0d0d;border:1px solid var(--border);color:#ddd;padding:1.2rem;font-size:0.85rem;font-family:'Noto Serif JP',serif;line-height:2;resize:vertical;min-height:300px;outline:none;"></textarea>
       <div style="margin-top:1rem;display:flex;gap:0.75rem;">
         <button onclick="saveTextEdit()" style="background:var(--white);color:var(--black);border:none;padding:0.6rem 1.5rem;font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.1em;cursor:pointer;">保存する →</button>
@@ -2743,7 +2749,7 @@ function openPreviewFromForm() {
       <h1>${title}</h1>
       <div class="reader-meta">by ${author} &nbsp;|&nbsp; ${genre} &nbsp;|&nbsp; ${today}</div>
       ${body.length > 0
-        ? body.map(p => `<p class="reader-paragraph">${p.replace(/\n/g, '<br>')}</p>`).join('')
+        ? renderNovelBody(body)
         : '<p class="reader-paragraph" style="color:#aaa;">（本文はまだありません）</p>'
       }
     `;
@@ -2829,6 +2835,25 @@ async function loadDraft() {
 }
 
 // --- PREVIEW ---
+function insertDivider(textareaId) {
+  const ta = document.getElementById(textareaId);
+  const start = ta.selectionStart;
+  const end = ta.selectionEnd;
+  const divider = '\n\n---\n\n';
+  ta.value = ta.value.slice(0, start) + divider + ta.value.slice(end);
+  const pos = start + divider.length;
+  ta.selectionStart = ta.selectionEnd = pos;
+  ta.focus();
+}
+
+function renderNovelBody(paragraphs) {
+  return paragraphs.map(p =>
+    /^-{3,}$/.test(p.trim())
+      ? `<hr style="border:none;border-top:1px solid #444;margin:2rem auto;width:60%;">`
+      : `<p class="reader-paragraph">${p.replace(/\n/g, '<br>')}</p>`
+  ).join('');
+}
+
 function openPreview(source) {
   let title, genre, author, body;
   const today = new Date().toISOString().slice(0, 10);
@@ -2882,7 +2907,7 @@ function openPreview(source) {
     bodyEl.innerHTML = `
       <h1>${title}</h1>
       <div class="reader-meta">by ${author} &nbsp;|&nbsp; ${genre} &nbsp;|&nbsp; ${today}</div>
-      ${body.map(p => `<p class="reader-paragraph">${p.replace(/\n/g, '<br>')}</p>`).join('')}
+      ${renderNovelBody(body)}
     `;
   } else {
     bodyEl.innerHTML = `
@@ -3154,7 +3179,7 @@ function openReader(id) {
     document.getElementById('r-body').innerHTML = `
       <h1>${fullTitle}</h1>
       <div class="reader-meta">by ${w.author} &nbsp;|&nbsp; ${w.genre} &nbsp;|&nbsp; ${w.date}</div>
-      ${w.body.map(p => `<p class="reader-paragraph">${p.replace(/\n/g, '<br>')}</p>`).join('')}
+      ${renderNovelBody(body)}
       <p style="font-family:'Noto Serif JP',serif;font-size:1rem;color:#111;letter-spacing:0.2em;margin-top:2.5rem;margin-bottom:0.5rem;">— つづく —</p>
     `;
   }
