@@ -1347,9 +1347,9 @@ footer {
         <div id="f-manga-hint" style="display:none;font-family:'IBM Plex Mono',monospace;font-size:0.5rem;color:#aaa;letter-spacing:0.1em;margin-top:0.5rem;">ドラッグで順番入れ替え・×で削除</div>
       </div>
       <div class="form-block" id="f-novel-block" style="display:none;">
-        <label class="form-lbl">本文（段落ごとに空行で区切ってください）</label>
-        <textarea class="form-ctrl" id="f-body" placeholder="ここに本文を入力..." style="min-height:240px;line-height:2;font-family:'Noto Serif JP',serif;font-size:0.85rem;resize:vertical;"></textarea>
-        <button type="button" onclick="insertDivider('f-body')" style="background:none;border:1px solid #444;border-radius:6px;color:#555;padding:0.3rem 0.8rem;cursor:pointer;font-size:0.75rem;letter-spacing:0.3em;transition:all 0.2s;margin-top:0.5rem;display:block;" onmouseover="this.style.borderColor='#aaa';this.style.color='#aaa'" onmouseout="this.style.borderColor='#444';this.style.color='#555'">－</button>
+        <label class="form-lbl">本文</label>
+        <textarea id="f-body" style="display:none;"></textarea>
+        <button type="button" onclick="openNovelEditor()" id="f-body-preview-btn" style="width:100%;min-height:100px;background:#0d0d0d;border:1px solid var(--border);color:#555;padding:1.2rem;font-family:'Noto Serif JP',serif;font-size:0.85rem;text-align:left;cursor:pointer;line-height:2;transition:border-color 0.2s;" onmouseover="this.style.borderColor='#aaa'" onmouseout="this.style.borderColor='var(--border)'">本文を書く →</button>
       </div>
       <div class="form-block">
         <label class="form-lbl">継承価格（¥）</label>
@@ -1682,9 +1682,9 @@ footer {
 
       <!-- 小説本文編集 -->
       <div class="form-block" id="e-novel-block" style="display:none;">
-        <label class="form-lbl">本文（空行で段落区切り）</label>
-        <textarea class="form-ctrl" id="e-body" style="min-height:240px;line-height:2;font-family:'Noto Serif JP',serif;font-size:0.85rem;resize:vertical;"></textarea>
-        <button type="button" onclick="insertDivider('e-body')" style="background:none;border:1px solid #444;border-radius:6px;color:#555;padding:0.3rem 0.8rem;cursor:pointer;font-size:0.75rem;letter-spacing:0.3em;transition:all 0.2s;margin-top:0.5rem;display:block;" onmouseover="this.style.borderColor='#aaa';this.style.color='#aaa'" onmouseout="this.style.borderColor='#444';this.style.color='#555'">－</button>
+        <label class="form-lbl">本文</label>
+        <textarea id="e-body" style="display:none;"></textarea>
+        <button type="button" onclick="openNovelEditor('e-body', 'e-body-preview-btn')" id="e-body-preview-btn" style="width:100%;min-height:80px;background:#0d0d0d;border:1px solid var(--border);color:#555;padding:1.2rem;font-family:'Noto Serif JP',serif;font-size:0.85rem;text-align:left;cursor:pointer;line-height:2;transition:border-color 0.2s;" onmouseover="this.style.borderColor='#aaa'" onmouseout="this.style.borderColor='var(--border)'">本文を書く →</button>
       </div>
 
       <!-- 漫画原稿編集 -->
@@ -1704,6 +1704,23 @@ footer {
       </div>
     </div>
   </div>
+</div>
+
+<!-- NOVEL EDITOR -->
+<div id="novel-editor-overlay" style="display:none;position:fixed;inset:0;background:#0a0a0a;z-index:2000;flex-direction:column;">
+  <!-- ツールバー -->
+  <div style="display:flex;align-items:center;gap:0.5rem;padding:0.75rem 1.5rem;border-bottom:1px solid #222;flex-shrink:0;">
+    <button onclick="novelEditorInsert('bold')" title="太字" style="background:none;border:1px solid #333;border-radius:4px;color:#aaa;width:32px;height:32px;cursor:pointer;font-size:0.85rem;font-weight:700;transition:all 0.2s;" onmouseover="this.style.borderColor='#fff';this.style.color='#fff'" onmouseout="this.style.borderColor='#333';this.style.color='#aaa'">B</button>
+    <button onclick="novelEditorInsert('italic')" title="斜体" style="background:none;border:1px solid #333;border-radius:4px;color:#aaa;width:32px;height:32px;cursor:pointer;font-size:0.85rem;font-style:italic;transition:all 0.2s;" onmouseover="this.style.borderColor='#fff';this.style.color='#fff'" onmouseout="this.style.borderColor='#333';this.style.color='#aaa'">I</button>
+    <div style="width:1px;height:20px;background:#333;margin:0 0.25rem;"></div>
+    <button onclick="novelEditorInsert('divider')" title="区切り線" style="background:none;border:1px solid #333;border-radius:4px;color:#aaa;width:32px;height:32px;cursor:pointer;font-size:0.9rem;transition:all 0.2s;" onmouseover="this.style.borderColor='#fff';this.style.color='#fff'" onmouseout="this.style.borderColor='#333';this.style.color='#aaa'">－</button>
+    <div style="flex:1;"></div>
+    <span id="novel-editor-count" style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#555;letter-spacing:0.1em;"></span>
+    <button onclick="discardNovelEditor()" style="background:none;border:none;color:#aaa;font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.1em;cursor:pointer;padding:0.4rem 0.75rem;transition:color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#aaa'">← 戻る</button>
+    <button onclick="saveNovelEditor()" style="background:var(--white);color:var(--black);border:none;padding:0.5rem 1.2rem;font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.15em;cursor:pointer;">保存する →</button>
+  </div>
+  <!-- エディタ本体 -->
+  <textarea id="novel-editor-input" placeholder="本文をここに入力..." style="flex:1;background:transparent;border:none;color:#ddd;padding:2rem 10%;font-size:1rem;font-family:'Noto Serif JP',serif;line-height:2.2;resize:none;outline:none;overflow-y:auto;" oninput="document.getElementById('novel-editor-count').textContent=this.value.replace(/\s/g,'').length+'文字'"></textarea>
 </div>
 
 <!-- PREVIEW PAGE（読書ページと同じ表示） -->
@@ -2243,13 +2260,15 @@ function openTextEdit(id) {
   document.getElementById('text-edit-overlay').classList.add('open');
 }
 
-function saveTextEdit() {
+async function saveTextEdit() {
   const w = works.find(x => x.id === currentId);
   if (!w) return;
   const raw = document.getElementById('text-edit-input').value.trim();
   if (!raw) { toast('本文を入力してください'); return; }
-  // 空行で段落分割
-  w.body = raw.split(/\n{2,}/).map(p => p.trim());
+  const body = raw.split(/\n{2,}/).map(p => p.trim());
+  const { error } = await db.from('works').update({ body }).eq('id', currentId);
+  if (error) { toast('保存に失敗しました'); return; }
+  w.body = body;
   closeOverlay('text-edit-overlay');
   renderManageList();
   render();
@@ -2841,6 +2860,64 @@ async function loadDraft() {
 }
 
 // --- PREVIEW ---
+let novelEditorTargetId = 'f-body';
+let novelEditorPreviewBtnId = 'f-body-preview-btn';
+
+function openNovelEditor(targetId = 'f-body', previewBtnId = 'f-body-preview-btn') {
+  novelEditorTargetId = targetId;
+  novelEditorPreviewBtnId = previewBtnId;
+  const current = document.getElementById(targetId).value;
+  document.getElementById('novel-editor-input').value = current;
+  const count = current.replace(/\s/g, '').length;
+  document.getElementById('novel-editor-count').textContent = count ? count + '文字' : '';
+  const overlay = document.getElementById('novel-editor-overlay');
+  overlay.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  document.getElementById('novel-editor-input').focus();
+}
+
+async function discardNovelEditor() {
+  const current = document.getElementById(novelEditorTargetId).value;
+  const editing = document.getElementById('novel-editor-input').value;
+  if (current !== editing) {
+    const ok = await showConfirm('編集内容を保存しますか？', '保存せずに戻ると、今回の変更は失われます。', '保存する');
+    if (ok) { saveNovelEditor(); return; }
+  }
+  closeNovelEditor();
+}
+
+function closeNovelEditor() {
+  document.getElementById('novel-editor-overlay').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function saveNovelEditor() {
+  const val = document.getElementById('novel-editor-input').value;
+  document.getElementById(novelEditorTargetId).value = val;
+  const btn = document.getElementById(novelEditorPreviewBtnId);
+  const preview = val.trim().slice(0, 60);
+  btn.textContent = preview ? preview + (val.trim().length > 60 ? '…' : '') : '本文を書く →';
+  btn.style.color = preview ? '#ddd' : '#555';
+  closeNovelEditor();
+}
+
+function novelEditorInsert(type) {
+  const ta = document.getElementById('novel-editor-input');
+  const start = ta.selectionStart;
+  const end = ta.selectionEnd;
+  const selected = ta.value.slice(start, end);
+  let insert = '';
+  if (type === 'bold') insert = `**${selected || '太字テキスト'}**`;
+  else if (type === 'italic') insert = `*${selected || '斜体テキスト'}*`;
+  else if (type === 'divider') insert = '\n\n---\n\n';
+  ta.value = ta.value.slice(0, start) + insert + ta.value.slice(end);
+  const pos = type === 'divider' ? start + insert.length : start + (type === 'bold' ? 2 : 1);
+  ta.selectionStart = type === 'divider' ? pos : start + 2;
+  ta.selectionEnd = type === 'divider' ? pos : start + 2 + (selected || (type === 'bold' ? '太字テキスト' : '斜体テキスト')).length;
+  ta.focus();
+  document.getElementById('novel-editor-count').textContent = ta.value.replace(/\s/g, '').length + '文字';
+}
+
 function insertDivider(textareaId) {
   const ta = document.getElementById(textareaId);
   const start = ta.selectionStart;
@@ -2853,13 +2930,19 @@ function insertDivider(textareaId) {
 }
 
 function renderNovelBody(paragraphs) {
-  return paragraphs.map(p =>
-    /^-{3,}$/.test(p.trim())
-      ? `<hr style="border:none;border-top:2px dashed #444;margin:2rem auto;width:100%;">`
-      : p.trim() === ''
-        ? `<p class="reader-paragraph" style="min-height:1.5em;">&nbsp;</p>`
-        : `<p class="reader-paragraph">${p.replace(/\n/g, '<br>')}</p>`
-  ).join('');
+  return paragraphs.map(p => {
+    if (/^-{3,}$/.test(p.trim())) {
+      return `<hr style="border:none;border-top:2px dashed #444;margin:2rem auto;width:100%;">`;
+    }
+    if (p.trim() === '') {
+      return `<p class="reader-paragraph" style="min-height:1.5em;">&nbsp;</p>`;
+    }
+    const html = p
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      .replace(/\n/g, '<br>');
+    return `<p class="reader-paragraph">${html}</p>`;
+  }).join('');
 }
 
 function openPreview(source) {
@@ -3422,6 +3505,10 @@ function openEditOverlay() {
     mangaBlock.style.display = 'none';
     const bodyEl = document.getElementById('e-body');
     bodyEl.value = w.body ? w.body.join('\n\n') : '';
+    const btn = document.getElementById('e-body-preview-btn');
+    const preview = bodyEl.value.trim().slice(0, 60);
+    btn.textContent = preview ? preview + (bodyEl.value.trim().length > 60 ? '…' : '') : '本文を書く →';
+    btn.style.color = preview ? '#ddd' : '#555';
   } else {
     novelBlock.style.display = 'none';
     mangaBlock.style.display = 'block';
