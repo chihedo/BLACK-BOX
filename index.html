@@ -3134,12 +3134,11 @@ function updateOverviewReactions(w) {
   document.getElementById('ov-comment-login').style.display = currentUser ? 'none' : 'block';
 }
 
-function toggleLikeFromOverview() {
+async function toggleLikeFromOverview() {
   if (!currentUser) { toast('ログインが必要です'); return; }
   const w = works.find(x => x.id === currentId);
   if (!w) return;
-  w.liked = !w.liked;
-  w.likes += w.liked ? 1 : -1;
+  await toggleLike(w.id);
   updateOverviewReactions(w);
   render();
 }
@@ -3267,6 +3266,7 @@ function openReader(id) {
       <p style="font-family:'Noto Serif JP',serif;font-size:1rem;color:#111;letter-spacing:0.2em;margin-top:2.5rem;margin-bottom:0.5rem;">— つづく —</p>
     `;
   } else {
+    const body = Array.isArray(w.body) ? w.body : [];
     document.getElementById('r-body').innerHTML = `
       <h1>${fullTitle}</h1>
       <div class="reader-meta">by ${w.author} &nbsp;|&nbsp; ${w.genre} &nbsp;|&nbsp; ${w.date}</div>
@@ -3318,12 +3318,11 @@ function updateReaderBar(w) {
   document.getElementById('r-comment-count').textContent = (w.comments || []).length;
 }
 
-function toggleLikeFromReader() {
+async function toggleLikeFromReader() {
   if (!currentUser) { toast('ログインが必要です'); return; }
   const w = works.find(x => x.id === currentId);
   if (!w) return;
-  w.liked = !w.liked;
-  w.likes += w.liked ? 1 : -1;
+  await toggleLike(w.id);
   updateReaderBar(w);
   render();
 }
@@ -3471,12 +3470,19 @@ function acquireFromCard(id) {
   acquireAndWrite();
 }
 
-function toggleLike(id) {
+async function toggleLike(id) {
   if (!currentUser) { toast('ログインが必要です'); return; }
   const w = works.find(x => x.id === id);
   if (!w) return;
-  w.liked = !w.liked;
-  w.likes += w.liked ? 1 : -1;
+  if (w.liked) {
+    await db.from('likes').delete().eq('work_id', id).eq('user_id', currentUser.id);
+    w.liked = false;
+    w.likes = Math.max(0, w.likes - 1);
+  } else {
+    await db.from('likes').insert({ work_id: id, user_id: currentUser.id, user_name: currentUser.name });
+    w.liked = true;
+    w.likes += 1;
+  }
   render();
 }
 
@@ -3665,7 +3671,7 @@ async function init() {
       seriesId: w.series_id,
       comments: (commentsData || []).filter(c => c.work_id === w.id),
       liked: currentUser
-        ? (likesData || []).some(l => l.work_id === w.id && l.user_name === currentUser.name)
+        ? (likesData || []).some(l => l.work_id === w.id && l.user_id === currentUser.id)
         : false,
     }));
   }
