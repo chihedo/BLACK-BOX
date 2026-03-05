@@ -1179,6 +1179,10 @@ footer {
   <div class="section-head">
     <h2 class="section-title">掲載中の作品</h2>
   </div>
+  <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:0;">
+    <button id="tab-all" onclick="switchHomeTab('all')" style="background:none;border:none;border-bottom:2px solid var(--red);color:#aaa;padding:0.75rem 1.5rem;font-family:'IBM Plex Mono',monospace;font-size:0.7rem;letter-spacing:0.15em;cursor:pointer;transition:all 0.2s;">すべて</button>
+    <button id="tab-following" onclick="switchHomeTab('following')" style="background:none;border:none;border-bottom:2px solid transparent;color:#555;padding:0.75rem 1.5rem;font-family:'IBM Plex Mono',monospace;font-size:0.7rem;letter-spacing:0.15em;cursor:pointer;transition:all 0.2s;">フォロー中</button>
+  </div>
   <div class="works-list" id="works-list"></div>
 </section>
 
@@ -1455,7 +1459,10 @@ footer {
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
         </div>
         <div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:0.1em;margin-bottom:0.5rem;" id="prof-name"></div>
+          <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem;">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:0.1em;" id="prof-name"></div>
+            <button id="prof-follow-btn" style="display:none;background:#fff;color:#000;border:1px solid #fff;padding:0.3rem 0.9rem;font-family:'IBM Plex Mono',monospace;font-size:0.55rem;letter-spacing:0.1em;cursor:pointer;transition:all 0.2s;" onclick="toggleFollow()" onmouseover="this.dataset.following==='1' ? (this.style.background='#333',this.style.borderColor='#333') : (this.style.background='#ddd',this.style.borderColor='#ddd')" onmouseout="this.dataset.following==='1' ? (this.style.background='#000',this.style.color='#fff',this.style.borderColor='#000') : (this.style.background='#fff',this.style.color='#000',this.style.borderColor='#fff')"></button>
+          </div>
           <div style="font-size:0.85rem;color:#aaa;line-height:1.8;font-weight:300;" id="prof-bio"></div>
         </div>
       </div>
@@ -1497,13 +1504,22 @@ footer {
           <span style="font-family:'Bebas Neue',sans-serif;font-size:2rem;display:block;" id="prof-revenue">¥0</span>
         </div>
       </div>
-      <!-- 他人閲覧時は投稿数のみ -->
-      <div id="prof-stats-other" style="display:none;grid-template-columns:1fr;border:1px solid #333;margin-bottom:2rem;">
-        <div style="padding:1.2rem 1.5rem;">
+      <!-- 他人閲覧時は投稿数・フォロワー・フォローボタン -->
+      <div id="prof-stats-other" style="display:none;grid-template-columns:1fr 1fr 1fr;border:1px solid #333;margin-bottom:1.5rem;">
+        <div style="padding:1.2rem 1.5rem;border-right:1px solid #333;">
           <span style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#aaa;letter-spacing:0.2em;display:block;margin-bottom:0.4rem;">投稿数</span>
           <span style="font-family:'Bebas Neue',sans-serif;font-size:2rem;display:block;" id="prof-posts-other">0</span>
         </div>
+        <div style="padding:1.2rem 1.5rem;border-right:1px solid #333;">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#aaa;letter-spacing:0.2em;display:block;margin-bottom:0.4rem;">フォロワー</span>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:2rem;display:block;" id="prof-followers">0</span>
+        </div>
+        <div style="padding:1.2rem 1.5rem;">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#aaa;letter-spacing:0.2em;display:block;margin-bottom:0.4rem;">フォロー中</span>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:2rem;display:block;" id="prof-following-count">0</span>
+        </div>
       </div>
+      <button id="prof-follow-btn-dummy" style="display:none;"></button>
       <div style="margin-bottom:1.5rem;">
         <div style="font-family:'IBM Plex Mono',monospace;font-size:0.6rem;color:#aaa;letter-spacing:0.2em;margin-bottom:1rem;">投稿作品</div>
         <div id="prof-works" style="display:flex;flex-direction:column;gap:1px;"></div>
@@ -1789,7 +1805,24 @@ function updateStats() {
 
 function render() {
   const list = document.getElementById('works-list');
-  const data = filtered();
+  let data = filtered();
+
+  if (currentHomeTab === 'following') {
+    if (!currentUser) {
+      list.innerHTML = `<div class="empty-state"><p>ログインするとフォロー中の作品が表示されます</p></div>`;
+      return;
+    }
+    const followingIds = follows.filter(f => f.follower_id === currentUser.id).map(f => f.following_id);
+    // profilesからfollowing_idに対応するauthor名を取得して絞り込み
+    data = data.filter(w => {
+      const wp = profilesCache[w.author_id];
+      return wp && followingIds.includes(w.author_id);
+    });
+    if (!data.length) {
+      list.innerHTML = `<div class="empty-state"><p>フォロー中のユーザーの作品がありません</p></div>`;
+      return;
+    }
+  }
   updateStats();
 
   if (!data.length) {
@@ -2086,6 +2119,50 @@ async function doLogout() {
   toast('ログアウトしました');
 }
 
+// --- FOLLOW ---
+let follows = []; // { follower_id, following_id }
+let currentHomeTab = 'all';
+let profilesCache = {}; // { uuid: { id, name } }
+
+async function toggleFollow() {
+  const btn = document.getElementById('prof-follow-btn');
+  if (!currentUser || !btn._targetId) return;
+  if (btn._isFollowing) {
+    await db.from('follows').delete().eq('follower_id', currentUser.id).eq('following_id', btn._targetId);
+    btn._isFollowing = false;
+    btn.textContent = 'フォローする';
+    btn.style.background = '#fff';
+    btn.style.color = '#000';
+    btn.style.borderColor = '#fff';
+    btn.dataset.following = '0';
+    follows = follows.filter(f => !(f.follower_id === currentUser.id && f.following_id === btn._targetId));
+    const countEl = document.getElementById('prof-followers');
+    countEl.textContent = Math.max(0, parseInt(countEl.textContent) - 1);
+  } else {
+    await db.from('follows').insert({ follower_id: currentUser.id, following_id: btn._targetId });
+    btn._isFollowing = true;
+    btn.textContent = 'フォロー中';
+    btn.style.background = '#000';
+    btn.style.color = '#fff';
+    btn.style.borderColor = '#000';
+    btn.dataset.following = '1';
+    follows.push({ follower_id: currentUser.id, following_id: btn._targetId });
+    const countEl = document.getElementById('prof-followers');
+    countEl.textContent = parseInt(countEl.textContent) + 1;
+  }
+}
+
+function switchHomeTab(tab) {
+  currentHomeTab = tab;
+  const allBtn = document.getElementById('tab-all');
+  const followingBtn = document.getElementById('tab-following');
+  allBtn.style.borderBottomColor = tab === 'all' ? 'var(--red)' : 'transparent';
+  allBtn.style.color = tab === 'all' ? '#aaa' : '#555';
+  followingBtn.style.borderBottomColor = tab === 'following' ? 'var(--red)' : 'transparent';
+  followingBtn.style.color = tab === 'following' ? '#aaa' : '#555';
+  render();
+}
+
 // --- PROFILE ---
 let currentProfileName = '';
 
@@ -2132,6 +2209,32 @@ async function openProfile(authorName) {
   document.getElementById('prof-stats-all').style.display = isMe ? 'grid' : 'none';
   document.getElementById('prof-stats-other').style.display = isMe ? 'none' : 'grid';
   document.getElementById('prof-posts-other').textContent = authorWorks.length;
+
+  // フォロワー数・フォロー数・フォローボタン
+  if (!isMe && profile.id) {
+    const [{ count: followerCount }, { count: followingCount }] = await Promise.all([
+      db.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', profile.id),
+      db.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', profile.id),
+    ]);
+    document.getElementById('prof-followers').textContent = followerCount || 0;
+    document.getElementById('prof-following-count').textContent = followingCount || 0;
+
+    const followBtn = document.getElementById('prof-follow-btn');
+    followBtn.style.display = currentUser ? 'block' : 'none';
+    if (currentUser) {
+      const { data: existingFollow } = await db.from('follows').select('id').eq('follower_id', currentUser.id).eq('following_id', profile.id).maybeSingle();
+      const isFollowing = !!existingFollow;
+      followBtn.textContent = isFollowing ? 'フォロー中' : 'フォローする';
+      followBtn.style.background = isFollowing ? '#000' : '#fff';
+      followBtn.style.color = isFollowing ? '#fff' : '#000';
+      followBtn.style.borderColor = isFollowing ? '#000' : '#fff';
+      followBtn.dataset.following = isFollowing ? '1' : '0';
+      followBtn._targetId = profile.id;
+      followBtn._isFollowing = isFollowing;
+    }
+  } else {
+    document.getElementById('prof-follow-btn').style.display = 'none';
+  }
 
   const workList = document.getElementById('prof-works');
   if (authorWorks.length === 0) {
@@ -3659,6 +3762,16 @@ async function init() {
   const { data: worksData } = await db.from('works')
     .select('*')
     .order('created_at', { ascending: false });
+
+  // フォローデータ取得
+  if (currentUser) {
+    const { data: followsData } = await db.from('follows').select('*').eq('follower_id', currentUser.id);
+    follows = followsData || [];
+  }
+
+  // profilesキャッシュ（author_id→profile）
+  const { data: allProfiles } = await db.from('profiles').select('id, name');
+  (allProfiles || []).forEach(p => { profilesCache[p.id] = p; });
 
   if (worksData && worksData.length > 0) {
     // コメントも取得
