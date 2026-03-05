@@ -1179,9 +1179,9 @@ footer {
   <div class="section-head">
     <h2 class="section-title">掲載中の作品</h2>
   </div>
-  <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:0;">
-    <button id="tab-all" onclick="switchHomeTab('all')" style="background:none;border:none;border-bottom:2px solid var(--red);color:#aaa;padding:0.75rem 1.5rem;font-family:'IBM Plex Mono',monospace;font-size:0.7rem;letter-spacing:0.15em;cursor:pointer;transition:all 0.2s;">すべて</button>
-    <button id="tab-following" onclick="switchHomeTab('following')" style="background:none;border:none;border-bottom:2px solid transparent;color:#555;padding:0.75rem 1.5rem;font-family:'IBM Plex Mono',monospace;font-size:0.7rem;letter-spacing:0.15em;cursor:pointer;transition:all 0.2s;">フォロー中</button>
+  <div style="display:flex;border-bottom:1px solid var(--border);margin-bottom:0;">
+    <button id="tab-all" onclick="switchHomeTab('all')" style="flex:1;background:none;border:none;border-bottom:2px solid var(--red);color:#aaa;padding:0.75rem;font-family:'IBM Plex Mono',monospace;font-size:0.7rem;letter-spacing:0.15em;cursor:pointer;transition:all 0.2s;">すべて</button>
+    <button id="tab-following" onclick="switchHomeTab('following')" style="flex:1;background:none;border:none;border-bottom:2px solid transparent;color:#555;padding:0.75rem;font-family:'IBM Plex Mono',monospace;font-size:0.7rem;letter-spacing:0.15em;cursor:pointer;transition:all 0.2s;">フォロー中</button>
   </div>
   <div class="works-list" id="works-list"></div>
 </section>
@@ -1733,7 +1733,7 @@ footer {
     <button onclick="saveNovelEditor()" style="background:var(--white);color:var(--black);border:none;padding:0.5rem 1.2rem;font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.15em;cursor:pointer;">保存する →</button>
   </div>
   <!-- エディタ本体 -->
-  <textarea id="novel-editor-input" placeholder="本文をここに入力..." style="flex:1;background:transparent;border:none;color:#ddd;padding:2rem 10%;font-size:1rem;font-family:'Noto Serif JP',serif;line-height:2.2;resize:none;outline:none;overflow-y:auto;" oninput="document.getElementById('novel-editor-count').textContent=this.value.replace(/\s/g,'').length+'文字'"></textarea>
+  <textarea id="novel-editor-input" placeholder="本文をここに入力..." style="flex:1;background:transparent;border:none;color:#ddd;padding:2rem 10%;font-size:1rem;font-family:'Noto Serif JP',serif;line-height:2.2;resize:none;outline:none;overflow-y:auto;" oninput="const n=this.value.replace(/\s/g,'').length; const el=document.getElementById('novel-editor-count'); el.textContent=n+'文字 / 200〜3,000文字'; el.style.color=n>3000?'var(--red)':n<200?'#888':'#555';"></textarea>
 </div>
 
 <!-- PREVIEW PAGE（読書ページと同じ表示） -->
@@ -2839,8 +2839,16 @@ async function submitWork() {
   if (format === 'novel') {
     const raw = document.getElementById('f-body').value.trim();
     if (raw) {
+      const charCount = raw.replace(/\s/g, '').length;
+      if (charCount < 200) { hideLoading(); toast(`文字数が足りません（${charCount}文字 / 最低200文字）`); return; }
+      if (charCount > 3000) { hideLoading(); toast(`文字数が上限を超えています（${charCount}文字 / 上限3,000文字）`); return; }
       novelBody = raw.split(/\n{2,}/).map(p => p.trim());
     }
+  }
+
+  if (format === 'manga') {
+    const files = mangaFileOrder.length > 0 ? mangaFileOrder : [...document.getElementById('f-manga-files').files];
+    if (files.length > 32) { hideLoading(); toast(`ページ数が上限を超えています（${files.length}ページ / 上限32ページ）`); return; }
   }
 
   const newWork = {
@@ -3718,8 +3726,14 @@ async function saveEdit() {
 
   if (format === 'novel') {
     const raw = document.getElementById('e-body').value.trim();
+    if (raw) {
+      const charCount = raw.replace(/\s/g, '').length;
+      if (charCount < 200) { toast(`文字数が足りません（${charCount}文字 / 最低200文字）`); return; }
+      if (charCount > 3000) { toast(`文字数が上限を超えています（${charCount}文字 / 上限3,000文字）`); return; }
+    }
     body = raw ? raw.split(/\n{2,}/).map(p => p.trim()) : null;
   } else if (format === 'manga') {
+    if (editMangaPages.length > 32) { toast(`ページ数が上限を超えています（${editMangaPages.length}ページ / 上限32ページ）`); return; }
     // 新規ファイルをアップロードしてURLに変換
     toast('保存中...');
     const folderName = `${currentUser.id}_${w.id}`;
