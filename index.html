@@ -1453,72 +1453,41 @@ footer {
       <span class="modal-label" id="prof-modal-label">プロフィール</span>
       <button class="modal-close" onclick="closeOverlay('profile-overlay')">✕</button>
     </div>
-    <div id="prof-tab-info-content" class="modal-content">
+
+    <!-- 表示ビュー -->
+    <div id="prof-view" class="modal-content">
       <div style="display:flex;align-items:center;gap:1.5rem;margin-bottom:2rem;">
         <div id="prof-avatar" style="width:64px;height:64px;border-radius:50%;background:#222;border:1px solid #333;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
         </div>
-        <div>
-          <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem;">
+        <div style="flex:1;">
+          <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.3rem;flex-wrap:wrap;">
             <div style="font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:0.1em;" id="prof-name"></div>
             <button id="prof-follow-btn" style="display:none;background:#fff;color:#000;border:1px solid #fff;padding:0.3rem 0.9rem;font-family:'IBM Plex Mono',monospace;font-size:0.55rem;letter-spacing:0.1em;cursor:pointer;transition:all 0.2s;" onclick="toggleFollow()" onmouseover="this.dataset.following==='1' ? (this.style.background='#333',this.style.borderColor='#333') : (this.style.background='#ddd',this.style.borderColor='#ddd')" onmouseout="this.dataset.following==='1' ? (this.style.background='#000',this.style.color='#fff',this.style.borderColor='#000') : (this.style.background='#fff',this.style.color='#000',this.style.borderColor='#fff')"></button>
+            <button id="prof-edit-btn" style="display:none;background:none;border:1px solid var(--border);color:#aaa;padding:0.3rem 0.9rem;font-family:'IBM Plex Mono',monospace;font-size:0.55rem;letter-spacing:0.1em;cursor:pointer;transition:all 0.2s;" onclick="openProfEdit()" onmouseover="this.style.borderColor='#fff';this.style.color='#fff'" onmouseout="this.style.borderColor='var(--border)';this.style.color='#aaa'">編集</button>
           </div>
+          <div id="prof-follow-stats-me" style="display:none;font-family:'IBM Plex Mono',monospace;font-size:0.6rem;color:#aaa;letter-spacing:0.1em;margin-bottom:0.4rem;">フォロー <span id="prof-following-me">0</span> &nbsp;フォロワー <span id="prof-followers-me">0</span></div>
+          <div id="prof-follow-stats-other" style="display:none;font-family:'IBM Plex Mono',monospace;font-size:0.6rem;color:#aaa;letter-spacing:0.1em;margin-bottom:0.4rem;">フォロー <span id="prof-following-count">0</span> &nbsp;フォロワー <span id="prof-followers">0</span></div>
           <div style="font-size:0.85rem;color:#aaa;line-height:1.8;font-weight:300;" id="prof-bio"></div>
         </div>
       </div>
 
-      <!-- 本人のみ編集UI表示 -->
-      <div id="prof-edit-section" style="display:none;border:1px solid #333;padding:1.2rem 1.5rem;margin-bottom:2rem;background:#0d0d0d;">
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#aaa;letter-spacing:0.2em;margin-bottom:1rem;">プロフィールを編集</div>
-        <div class="form-block" style="display:flex;align-items:center;gap:1.5rem;margin-bottom:1rem;">
-          <div id="s-avatar-preview" style="width:52px;height:52px;border-radius:50%;background:#222;border:1px solid #333;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-          </div>
-          <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-            <input type="file" id="s-avatar-file" accept="image/*" style="display:none;" onchange="previewAvatar(this)">
-            <button onclick="document.getElementById('s-avatar-file').click()" style="background:none;border:1px solid var(--border);color:#aaa;padding:0.4rem 1rem;font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.1em;cursor:pointer;">画像を変更</button>
-            <button id="s-avatar-delete-btn" onclick="deleteAvatar()" style="display:none;background:none;border:1px solid #662222;color:#aa4444;padding:0.4rem 1rem;font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.1em;cursor:pointer;">削除</button>
-          </div>
+      <!-- 自分のstats -->
+      <div id="prof-stats-all" style="display:none;grid-template-columns:1fr 1fr 1fr;border:1px solid #333;margin-bottom:2rem;">
+        <div style="padding:1rem 1.2rem;border-right:1px solid #333;">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:0.5rem;color:#aaa;letter-spacing:0.15em;display:block;margin-bottom:0.4rem;">投稿数</span>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:1.8rem;display:block;" id="prof-posts">0</span>
         </div>
-        <div class="form-block">
-          <label class="form-lbl">ペンネーム</label>
-          <input type="text" class="form-ctrl" id="s-name" placeholder="名前">
+        <div style="padding:1rem 1.2rem;border-right:1px solid #333;">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:0.5rem;color:#aaa;letter-spacing:0.15em;display:block;margin-bottom:0.4rem;">継承実績</span>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:1.8rem;display:block;" id="prof-transfers">0</span>
         </div>
-        <div class="form-block">
-          <label class="form-lbl">自己紹介</label>
-          <textarea class="form-ctrl" id="s-bio" placeholder="一言プロフィール" style="height:80px;"></textarea>
-        </div>
-        <button class="btn-submit" onclick="saveSettings()" style="width:100%;">保存する →</button>
-      </div>
-      <div id="prof-stats-all" style="display:grid;grid-template-columns:1fr 1fr 1fr;border:1px solid #333;margin-bottom:2rem;">
-        <div style="padding:1.2rem 1.5rem;border-right:1px solid #333;">
-          <span style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#aaa;letter-spacing:0.2em;display:block;margin-bottom:0.4rem;">投稿数</span>
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:2rem;display:block;" id="prof-posts">0</span>
-        </div>
-        <div style="padding:1.2rem 1.5rem;border-right:1px solid #333;">
-          <span style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#aaa;letter-spacing:0.2em;display:block;margin-bottom:0.4rem;">継承実績</span>
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:2rem;display:block;" id="prof-transfers">0</span>
-        </div>
-        <div style="padding:1.2rem 1.5rem;">
-          <span style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#aaa;letter-spacing:0.2em;display:block;margin-bottom:0.4rem;">売上合計</span>
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:2rem;display:block;" id="prof-revenue">¥0</span>
+        <div style="padding:1rem 1.2rem;">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:0.5rem;color:#aaa;letter-spacing:0.15em;display:block;margin-bottom:0.4rem;">売上合計</span>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:1.8rem;display:block;" id="prof-revenue">¥0</span>
         </div>
       </div>
-      <!-- 他人閲覧時は投稿数・フォロワー・フォローボタン -->
-      <div id="prof-stats-other" style="display:none;grid-template-columns:1fr 1fr 1fr;border:1px solid #333;margin-bottom:1.5rem;">
-        <div style="padding:1.2rem 1.5rem;border-right:1px solid #333;">
-          <span style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#aaa;letter-spacing:0.2em;display:block;margin-bottom:0.4rem;">投稿数</span>
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:2rem;display:block;" id="prof-posts-other">0</span>
-        </div>
-        <div style="padding:1.2rem 1.5rem;border-right:1px solid #333;">
-          <span style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#aaa;letter-spacing:0.2em;display:block;margin-bottom:0.4rem;">フォロワー</span>
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:2rem;display:block;" id="prof-followers">0</span>
-        </div>
-        <div style="padding:1.2rem 1.5rem;">
-          <span style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#aaa;letter-spacing:0.2em;display:block;margin-bottom:0.4rem;">フォロー中</span>
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:2rem;display:block;" id="prof-following-count">0</span>
-        </div>
-      </div>
+
       <button id="prof-follow-btn-dummy" style="display:none;"></button>
       <div style="margin-bottom:1.5rem;">
         <div style="font-family:'IBM Plex Mono',monospace;font-size:0.6rem;color:#aaa;letter-spacing:0.2em;margin-bottom:1rem;">投稿作品</div>
@@ -1526,6 +1495,34 @@ footer {
       </div>
       <button class="btn-submit" id="prof-logout-btn" style="display:none;background:#333;color:#fff;" onclick="doLogout()">ログアウト</button>
     </div>
+
+    <!-- 編集ビュー -->
+    <div id="prof-edit-view" style="display:none;" class="modal-content">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#aaa;letter-spacing:0.2em;margin-bottom:1.5rem;">プロフィールを編集</div>
+      <div class="form-block" style="display:flex;align-items:center;gap:1.5rem;margin-bottom:1rem;">
+        <div id="s-avatar-preview" style="width:52px;height:52px;border-radius:50%;background:#222;border:1px solid #333;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        </div>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+          <input type="file" id="s-avatar-file" accept="image/*" style="display:none;" onchange="previewAvatar(this)">
+          <button onclick="document.getElementById('s-avatar-file').click()" style="background:none;border:1px solid var(--border);color:#aaa;padding:0.4rem 1rem;font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.1em;cursor:pointer;">画像を変更</button>
+          <button id="s-avatar-delete-btn" onclick="deleteAvatar()" style="display:none;background:none;border:1px solid #662222;color:#aa4444;padding:0.4rem 1rem;font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.1em;cursor:pointer;">削除</button>
+        </div>
+      </div>
+      <div class="form-block">
+        <label class="form-lbl">ペンネーム</label>
+        <input type="text" class="form-ctrl" id="s-name" placeholder="名前">
+      </div>
+      <div class="form-block">
+        <label class="form-lbl">自己紹介</label>
+        <textarea class="form-ctrl" id="s-bio" placeholder="一言プロフィール" style="height:80px;"></textarea>
+      </div>
+      <div style="display:flex;gap:0.75rem;margin-top:0.5rem;">
+        <button class="btn-submit" onclick="saveSettings()" style="flex:1;">保存する →</button>
+        <button onclick="closeProfEdit()" style="background:none;border:1px solid var(--border);color:#aaa;padding:0.8rem 1.2rem;font-family:'IBM Plex Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.borderColor='#fff';this.style.color='#fff'" onmouseout="this.style.borderColor='var(--border)';this.style.color='#aaa'">← 戻る</button>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -1980,14 +1977,14 @@ async function saveSettings() {
   currentUser.name   = name;
   currentUser.bio    = bio;
   currentUser.avatar_url = avatarUrl;
-  avatarCache[name]  = avatarUrl; // キャッシュ更新
+  avatarCache[name]  = avatarUrl;
   if (nameChanged) avatarCache[oldName] = undefined;
   updateAuthUI();
   render();
   closeOverlay('settings-overlay');
-  // プロフィールモーダルが開いていれば再表示
   if (document.getElementById('profile-overlay').classList.contains('open')) {
-    openProfile(currentUser.name);
+    await openProfile(currentUser.name);
+    closeProfEdit();
   }
   toast('プロフィールを更新しました');
 }
@@ -2190,7 +2187,6 @@ async function openProfile(authorName) {
   document.getElementById('prof-transfers').textContent = transferred;
   document.getElementById('prof-revenue').textContent = `¥${revenue.toLocaleString()}`;
   document.getElementById('prof-logout-btn').style.display = isMe ? 'block' : 'none';
-  document.getElementById('prof-edit-section').style.display = isMe ? 'block' : 'none';
 
   if (isMe) {
     document.getElementById('s-name').value = currentUser.name || '';
@@ -2206,11 +2202,25 @@ async function openProfile(authorName) {
     }
   }
 
+  document.getElementById('prof-view').style.display = 'block';
+  document.getElementById('prof-edit-view').style.display = 'none';
   document.getElementById('prof-stats-all').style.display = isMe ? 'grid' : 'none';
-  document.getElementById('prof-stats-other').style.display = isMe ? 'none' : 'grid';
-  document.getElementById('prof-posts-other').textContent = authorWorks.length;
+  document.getElementById('prof-edit-btn').style.display = isMe ? 'block' : 'none';
 
   // フォロワー数・フォロー数・フォローボタン
+  if (isMe && currentUser) {
+    const [{ count: followerCount }, { count: followingCount }] = await Promise.all([
+      db.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', currentUser.id),
+      db.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', currentUser.id),
+    ]);
+    document.getElementById('prof-followers-me').textContent = followerCount || 0;
+    document.getElementById('prof-following-me').textContent = followingCount || 0;
+    document.getElementById('prof-follow-stats-me').style.display = 'block';
+    document.getElementById('prof-follow-stats-other').style.display = 'none';
+  } else {
+    document.getElementById('prof-follow-stats-me').style.display = 'none';
+  }
+
   if (!isMe && profile.id) {
     const [{ count: followerCount }, { count: followingCount }] = await Promise.all([
       db.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', profile.id),
@@ -2218,6 +2228,7 @@ async function openProfile(authorName) {
     ]);
     document.getElementById('prof-followers').textContent = followerCount || 0;
     document.getElementById('prof-following-count').textContent = followingCount || 0;
+    document.getElementById('prof-follow-stats-other').style.display = 'block';
 
     const followBtn = document.getElementById('prof-follow-btn');
     followBtn.style.display = currentUser ? 'block' : 'none';
@@ -2250,6 +2261,30 @@ async function openProfile(authorName) {
   }
 
   document.getElementById('profile-overlay').classList.add('open');
+}
+
+function openProfEdit() {
+  const profile = { name: currentUser.name, bio: currentUser.bio, avatar_url: currentUser.avatar_url };
+  document.getElementById('s-name').value = currentUser.name || '';
+  document.getElementById('s-bio').value = currentUser.bio || '';
+  const avatarPreview = document.getElementById('s-avatar-preview');
+  const deleteBtn = document.getElementById('s-avatar-delete-btn');
+  if (currentUser.avatar_url) {
+    avatarPreview.innerHTML = `<img src="${currentUser.avatar_url}" style="width:100%;height:100%;object-fit:cover;">`;
+    deleteBtn.style.display = 'block';
+  } else {
+    avatarPreview.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`;
+    deleteBtn.style.display = 'none';
+  }
+  document.getElementById('prof-view').style.display = 'none';
+  document.getElementById('prof-edit-view').style.display = 'block';
+  document.getElementById('prof-modal-label').textContent = 'プロフィールを編集';
+}
+
+function closeProfEdit() {
+  document.getElementById('prof-view').style.display = 'block';
+  document.getElementById('prof-edit-view').style.display = 'none';
+  document.getElementById('prof-modal-label').textContent = 'プロフィール';
 }
 
 async function openManageOverlay() {
@@ -2318,7 +2353,6 @@ async function renderManageList() {
         <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
           <button onclick="openManageEdit(${w.id})" style="background:none;border:1px solid var(--border);color:#aaa;padding:0.4rem 0.8rem;font-family:'IBM Plex Mono',monospace;font-size:0.55rem;letter-spacing:0.1em;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.borderColor='#fff';this.style.color='#fff'" onmouseout="this.style.borderColor='var(--border)';this.style.color='#aaa'">✎ 編集</button>
           ${w.format === 'novel' && w.body ? `<button onclick="openTextEdit(${w.id})" style="background:none;border:1px solid #4488ff;color:#4488ff;padding:0.4rem 0.8rem;font-family:'IBM Plex Mono',monospace;font-size:0.55rem;letter-spacing:0.1em;cursor:pointer;transition:all 0.2s;">本文編集</button>` : ''}
-          ${w.format === 'manga' ? `<label style="background:none;border:1px solid var(--red);color:var(--red);padding:0.4rem 0.8rem;font-family:'IBM Plex Mono',monospace;font-size:0.55rem;letter-spacing:0.1em;cursor:pointer;transition:all 0.2s;"><input type="file" accept="image/*" multiple style="display:none;" onchange="replaceMangaFiles(${w.id}, this)">差し替え</label>` : ''}
           <button onclick="confirmDelete(${w.id})" style="background:none;border:1px solid #662222;color:#aa4444;padding:0.4rem 0.8rem;font-family:'IBM Plex Mono',monospace;font-size:0.55rem;letter-spacing:0.1em;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='#330000'" onmouseout="this.style.background='none'">削除</button>
         </div>
       </div>
